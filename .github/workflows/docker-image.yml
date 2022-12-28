@@ -52,7 +52,7 @@ jobs:
       - name: debug
         shell: bash
         env:
-            SUPER_SECRET: ${{ secrets.SSH_USERNAME }}
+            SUPER_SECRET: ${{ secrets.SSH_PASSWORD }}
         run: |
             echo "$SUPER_SECRET"
 
@@ -61,7 +61,7 @@ jobs:
         with:
             host: ${{secrets.SSH_HOST}}
             username: ${{secrets.SSH_USERNAME}}
-            key: ${{ secrets.KEY }}
+            password: ${{secrets.SSH_PASSWORD}}
             script: |
                 docker pull ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:main
                 docker run -it -d -p 5000:80 ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:main
