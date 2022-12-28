@@ -49,6 +49,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: debug
+        shell: bash
+        env:
+            SUPER_SECRET: ${{ secrets.SSH_USERNAME} }}
+        run: |
+        echo "$SUPER_SECRET"
+
       - name: Pull and start
         uses: appleboy/ssh-action@v0.1.6
         with:
