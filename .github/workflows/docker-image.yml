@@ -52,7 +52,7 @@ jobs:
       - name: debug
         shell: bash
         env:
-            SUPER_SECRET: ${{ secrets.SSH_USERNAME} }}
+            SUPER_SECRET: ${{ secrets.SSH_USERNAME }}
         run: |
             echo "$SUPER_SECRET"
 
