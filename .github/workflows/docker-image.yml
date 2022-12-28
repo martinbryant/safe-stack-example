@@ -54,7 +54,7 @@ jobs:
         env:
             SUPER_SECRET: ${{ secrets.SSH_USERNAME} }}
         run: |
-        echo "$SUPER_SECRET"
+            echo "$SUPER_SECRET"
 
       - name: Pull and start
         uses: appleboy/ssh-action@v0.1.6
