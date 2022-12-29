@@ -2,7 +2,6 @@ source https://api.nuget.org/v3/index.json
 framework: net6.0
 storage: none
 
-nuget Feliz.Router
 nuget Fsharp.Core ~> 6
 nuget Fable.Remoting.Giraffe
 nuget LiteDB.FSharp
