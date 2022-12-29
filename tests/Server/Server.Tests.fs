@@ -8,12 +8,16 @@ open Server
 let server = testList "Server" [
     testCase "Adding valid Todo" <| fun _ ->
         let validTodo = Todo.create "TODO"
-        let expectedResult = Ok ()
+        let expectedResult = Ok validTodo
 
-        let result = Storage.addTodo validTodo
+        let storage = new Storage()
+
+        let result = storage.AddTodo validTodo
+
+        let todos = storage.GetTodos()
 
         Expect.equal result expectedResult "Result should be ok"
-        Expect.contains Storage.todos validTodo "Storage should contain new todo"
+        Expect.contains todos validTodo "Storage should contain new todo"
 ]
 
 let all =
