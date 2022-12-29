@@ -5,32 +5,44 @@ open Fable.Remoting.Giraffe
 open Saturn
 
 open Shared
+open LiteDB.FSharp
+open LiteDB
 
-module Storage =
-    let todos = ResizeArray()
+type Storage() as storage =
+    let database =
+        let mapper = FSharpBsonMapper()
+        let connStr = "Filename=Todo.db;mode=Exclusive"
+        new LiteDatabase (connStr, mapper)
 
-    let addTodo (todo: Todo) =
+    let todos = database.GetCollection<Todo> "todos"
+
+    do
+        if storage.GetTodos() |> Seq.isEmpty then
+            storage.AddTodo(Todo.create "Create new SAFE project") |> ignore
+            storage.AddTodo(Todo.create "Write your app") |> ignore
+            storage.AddTodo(Todo.create "Ship it !!!") |> ignore
+
+    member _.GetTodos () =
+        todos.FindAll () |> List.ofSeq
+
+    member _.AddTodo (todo:Todo) =
         if Todo.isValid todo.Description then
-            todos.Add todo
-            Ok()
+            let id = (todos.Insert todo).AsInt32
+            let newTodo = { todo with Id = id }
+            Ok newTodo
         else
             Error "Invalid todo"
 
-    do
-        addTodo (Todo.create "Create new SAFE project")
-        |> ignore
-
-        addTodo (Todo.create "Write your app") |> ignore
-        addTodo (Todo.create "Ship it !!!") |> ignore
-
 let todosApi =
-    { getTodos = fun () -> async { return Storage.todos |> List.ofSeq }
+    let storage = Storage()
+
+    { getTodos = fun () -> async { return storage.GetTodos() }
       addTodo =
         fun todo ->
             async {
                 return
-                    match Storage.addTodo todo with
-                    | Ok () -> todo
+                    match storage.AddTodo todo with
+                    | Ok newTodo -> newTodo
                     | Error e -> failwith e
             } }
 
