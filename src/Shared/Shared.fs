@@ -2,14 +2,15 @@ namespace Shared
 
 open System
 
-type Todo = { Id: Guid; Description: string }
+[<CLIMutable>]
+type Todo = { Id: int; Description: string }
 
 module Todo =
     let isValid (description: string) =
         String.IsNullOrWhiteSpace description |> not
 
     let create (description: string) =
-        { Id = Guid.NewGuid()
+        { Id = 0
           Description = description }
 
 module Route =
