@@ -46,20 +46,6 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 open Feliz
 open Feliz.Bulma
 
-let navBrand =
-    Bulma.navbarBrand.div [
-        Bulma.navbarItem.a [
-            prop.href "https://safe-stack.github.io/"
-            navbarItem.isActive
-            prop.children [
-                Html.img [
-                    prop.src "/favicon.png"
-                    prop.alt "Logo"
-                ]
-            ]
-        ]
-    ]
-
 let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo ) =
     let clickTodo = fun _ -> todo.Id |> TodoClicked |> dispatch
     Html.li [
@@ -100,33 +86,17 @@ let containerBox (model: Model) (dispatch: Msg -> unit) =
     ]
 
 let view (model: Model) (dispatch: Msg -> unit) =
-    Bulma.hero [
-        hero.isFullHeight
-        color.isPrimary
-        prop.style [
-            style.backgroundSize "cover"
-            style.backgroundImageUrl "https://unsplash.it/1200/900?random"
-            style.backgroundPosition "no-repeat center center fixed"
-        ]
-        prop.children [
-            Bulma.heroHead [
-                Bulma.navbar [
-                    Bulma.container [ navBrand ]
-                ]
-            ]
-            Bulma.heroBody [
-                Bulma.container [
-                    Bulma.column [
-                        column.is6
-                        column.isOffset3
-                        prop.children [
-                            Bulma.title [
-                                text.hasTextCentered
-                                prop.text "todo-app"
-                            ]
-                            containerBox model dispatch
-                        ]
+    Bulma.heroBody [
+        Bulma.container [
+            Bulma.column [
+                column.is6
+                column.isOffset3
+                prop.children [
+                    Bulma.title [
+                        text.hasTextCentered
+                        prop.text "todo-app"
                     ]
+                    containerBox model dispatch
                 ]
             ]
         ]

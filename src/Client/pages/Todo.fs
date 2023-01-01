@@ -3,6 +3,7 @@ module Todo
 open Shared
 open Elmish
 open Feliz
+open Feliz.Bulma
 open Fable.Remoting.Client
 
 type Model = { Todo: Todo }
@@ -24,4 +25,22 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | GotTodo todo -> { model with Todo = todo }, Cmd.none
 
 let view (model: Model) (dispatch: Msg -> unit) =
-    Html.h1 model.Todo.Description
+    Bulma.heroBody [
+        Bulma.container [
+            Bulma.column [
+                column.is6
+                column.isOffset3
+                prop.children [
+                    Bulma.title [
+                        text.hasTextCentered
+                        prop.text model.Todo.Description
+                    ]
+                    Bulma.box [
+                        Bulma.content [
+
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ]
