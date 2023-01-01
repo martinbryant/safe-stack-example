@@ -60,16 +60,19 @@ let navBrand =
         ]
     ]
 
+let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo ) =
+    let clickTodo = fun _ -> todo.Id |> TodoClicked |> dispatch
+    Html.li [
+        Html.a [
+            prop.onClick clickTodo
+            prop.text todo.Description ]
+                ]
+
 let containerBox (model: Model) (dispatch: Msg -> unit) =
+    let todoItem = todoItem model dispatch
     Bulma.box [
         Bulma.content [
-            Html.ol [
-                for todo in model.Todos do
-                    Html.li [
-                        Html.a [    prop.onClick (fun _ -> todo.Id |> TodoClicked |> dispatch)
-                                    prop.text todo.Description ]
-            ]
-        ]
+            Html.ol (List.map todoItem model.Todos)
         ]
         Bulma.field.div [
             field.isGrouped
@@ -79,7 +82,7 @@ let containerBox (model: Model) (dispatch: Msg -> unit) =
                     prop.children [
                         Bulma.input.text [
                             prop.value model.Input
-                            prop.placeholder "What needs to be done now?"
+                            prop.placeholder "What needs to be done?"
                             prop.onChange (fun x -> SetInput x |> dispatch)
                         ]
                     ]
