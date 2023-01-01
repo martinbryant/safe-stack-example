@@ -1,43 +1,62 @@
 module Index
 
 open Elmish
-open Fable.Remoting.Client
-open Shared
-
-type Model = { Todos: Todo list; Input: string }
-
-type Msg =
-    | GotTodos of Todo list
-    | SetInput of string
-    | AddTodo
-    | AddedTodo of Todo
-
-let todosApi =
-    Remoting.createApi ()
-    |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<ITodosApi>
-
-let init () : Model * Cmd<Msg> =
-    let model = { Todos = []; Input = "" }
-
-    let cmd = Cmd.OfAsync.perform todosApi.getTodos () GotTodos
-
-    model, cmd
-
-let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
-    match msg with
-    | GotTodos todos -> { model with Todos = todos }, Cmd.none
-    | SetInput value -> { model with Input = value }, Cmd.none
-    | AddTodo ->
-        let todo = Todo.create model.Input
-
-        let cmd = Cmd.OfAsync.perform todosApi.addTodo todo AddedTodo
-
-        { model with Input = "" }, cmd
-    | AddedTodo todo -> { model with Todos = model.Todos @ [ todo ] }, Cmd.none
-
+open Urls
 open Feliz
 open Feliz.Bulma
+
+type Page =
+    | TodoList of TodoList.Model
+    | Todo of Todo.Model
+    | NotFound
+
+type Model =
+    { CurrentPage: Page }
+
+type Msg =
+    | TodoListMsg of TodoList.Msg
+    | TodoMsg of Todo.Msg
+
+let initFromUrl url =
+    match url with
+    | Url.TodoList ->
+        let model, cmd = TodoList.init ()
+        { CurrentPage = TodoList model }, Cmd.map TodoListMsg cmd
+    | Url.Todo id ->
+        let model, cmd = Todo.init id
+        { CurrentPage = Todo model }, Cmd.map TodoMsg cmd
+    | Url.NotFound -> { CurrentPage = NotFound }, Cmd.none
+
+let init (url: Url option): Model * Cmd<Msg> =
+    match url with
+    | Some url -> initFromUrl url
+    | _ -> { CurrentPage = NotFound }, Cmd.none
+
+
+let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+    match model.CurrentPage, msg with
+    | TodoList todoModel, TodoListMsg todoMsg ->
+        let todoModel, todoCmd = TodoList.update todoMsg todoModel
+        let nextState = { model with CurrentPage = TodoList todoModel }
+        let nextCmd = Cmd.map TodoListMsg todoCmd
+        nextState, nextCmd
+
+    | Todo todoModel, TodoMsg todoMsg ->
+        let todoModel, todoCmd = Todo.update todoMsg todoModel
+        let nextState = { model with CurrentPage = Todo todoModel }
+        let nextCmd = Cmd.map TodoMsg todoCmd
+        nextState, nextCmd
+    | NotFound, _ | _, _ ->
+        model, Cmd.none
+
+let viewPage (model: Model) (dispatch: Msg -> unit) =
+    match model.CurrentPage with
+    | TodoList pageModel ->
+        TodoList.view pageModel (dispatch << TodoListMsg)
+
+    | Todo pageModel ->
+        Todo.view pageModel (dispatch << TodoMsg)
+    | NotFound -> Html.h1 "Not found"
 
 let navBrand =
     Bulma.navbarBrand.div [
@@ -48,39 +67,6 @@ let navBrand =
                 Html.img [
                     prop.src "/favicon.png"
                     prop.alt "Logo"
-                ]
-            ]
-        ]
-    ]
-
-let containerBox (model: Model) (dispatch: Msg -> unit) =
-    Bulma.box [
-        Bulma.content [
-            Html.ol [
-                for todo in model.Todos do
-                    Html.li [ prop.text todo.Description ]
-            ]
-        ]
-        Bulma.field.div [
-            field.isGrouped
-            prop.children [
-                Bulma.control.p [
-                    control.isExpanded
-                    prop.children [
-                        Bulma.input.text [
-                            prop.value model.Input
-                            prop.placeholder "What needs to be done now?"
-                            prop.onChange (fun x -> SetInput x |> dispatch)
-                        ]
-                    ]
-                ]
-                Bulma.control.p [
-                    Bulma.button.a [
-                        color.isPrimary
-                        prop.disabled (Todo.isValid model.Input |> not)
-                        prop.onClick (fun _ -> dispatch AddTodo)
-                        prop.text "Add"
-                    ]
                 ]
             ]
         ]
@@ -102,19 +88,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 ]
             ]
             Bulma.heroBody [
-                Bulma.container [
-                    Bulma.column [
-                        column.is6
-                        column.isOffset3
-                        prop.children [
-                            Bulma.title [
-                                text.hasTextCentered
-                                prop.text "todo-app"
-                            ]
-                            containerBox model dispatch
-                        ]
-                    ]
-                ]
+                viewPage model dispatch
             ]
         ]
     ]

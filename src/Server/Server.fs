@@ -33,6 +33,13 @@ type Storage() as storage =
         else
             Error "Invalid todo"
 
+    member _.GetTodo (id: int) =
+        let identifier = BsonValue(id)
+        let result = todos.FindById(identifier)
+        match box result with
+        | null -> Error "Todo not found"
+        | _ -> Ok result
+
 let todosApi =
     let storage = Storage()
 
@@ -44,7 +51,14 @@ let todosApi =
                     match storage.AddTodo todo with
                     | Ok newTodo -> newTodo
                     | Error e -> failwith e
-            } }
+            }
+      getTodo = fun id ->
+                    async {
+                        return
+                            match storage.GetTodo id with
+                            | Ok todo -> todo
+                            | Error e -> failwith e
+                    }}
 
 let webApp =
     Remoting.createApi ()
