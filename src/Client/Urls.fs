@@ -3,8 +3,10 @@ module Urls
 open Microsoft.FSharp.Reflection
 
 type Url =
-    | Todo
+    | TodoList
+    | Todo of int
     | NotFound
+
     member this.asString =
         let (case, _) =
             FSharpValue.GetUnionFields(this, typeof<Url>)
