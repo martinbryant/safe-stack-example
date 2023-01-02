@@ -17,7 +17,12 @@ module Route =
     let builder typeName methodName =
         sprintf "/api/%s/%s" typeName methodName
 
+
+type AppError =
+    | NotFound
+    | Request of string
+
 type ITodosApi =
     { getTodos: unit -> Async<Todo list>
       addTodo: Todo -> Async<Todo>
-      getTodo: int -> Async<Todo> }
+      getTodo: int -> Async<Result<Todo, AppError>> }
