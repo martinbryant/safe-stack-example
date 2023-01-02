@@ -57,7 +57,4 @@ jobs:
             password: ${{secrets.SSH_PASSWORD}}
             script: |
                 docker pull ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:main
-                docker stop safe-stack
-                docker container prune --force
-                docker image prune --all --force
-                docker run -it -d -p 5000:80 --name safe-stack ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:main
+                docker-compose up -d --build safe
