@@ -4,7 +4,7 @@ I have started this project to learn how to use the Safe Template and related fr
 
 The application has been deployed at
 
-[Demo](http://68.183.36.250:5000/)
+[Demo](https://safe.martinbryant.dev/)
 
 Below I have listed the pull requests which
 
