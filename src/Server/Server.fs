@@ -7,11 +7,20 @@ open Saturn
 open Shared
 open LiteDB.FSharp
 open LiteDB
+open Shared
+open System.IO
 
 type Storage() as storage =
+    let current = Directory.GetCurrentDirectory()
+    let directory = Path.Join(current, "/data")
+    do
+        if(Directory.Exists(directory) = false) then
+            Directory.CreateDirectory(directory) |> ignore
+
+    let filename = Path.Join(directory, "/Todo.db")
     let database =
         let mapper = FSharpBsonMapper()
-        let connStr = "Filename=Todo.db;mode=Exclusive"
+        let connStr = sprintf "Filename=%s;mode=Exclusive" filename
         new LiteDatabase (connStr, mapper)
 
     let todos = database.GetCollection<Todo> "todos"
@@ -37,7 +46,7 @@ type Storage() as storage =
         let identifier = BsonValue(id)
         let result = todos.FindById(identifier)
         match box result with
-        | null -> Error "Todo not found"
+        | null -> Error <| NotFound
         | _ -> Ok result
 
 let todosApi =
@@ -55,9 +64,7 @@ let todosApi =
       getTodo = fun id ->
                     async {
                         return
-                            match storage.GetTodo id with
-                            | Ok todo -> todo
-                            | Error e -> failwith e
+                            storage.GetTodo id
                     }}
 
 let webApp =
