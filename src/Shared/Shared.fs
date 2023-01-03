@@ -25,4 +25,5 @@ type AppError =
 type ITodosApi =
     { getTodos: unit -> Async<Todo list>
       addTodo: Todo -> Async<Todo>
-      getTodo: int -> Async<Result<Todo, AppError>> }
+      getTodo: int -> Async<Result<Todo, AppError>>
+      removeTodo: int -> Async<unit> }

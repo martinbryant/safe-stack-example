@@ -49,6 +49,10 @@ type Storage() as storage =
         | null -> Error <| NotFound
         | _ -> Ok result
 
+    member _.RemoveTodo (id: int) =
+        let identifier = BsonValue(id)
+        todos.Delete(identifier) |> ignore
+
 let todosApi =
     let storage = Storage()
 
@@ -65,6 +69,10 @@ let todosApi =
                     async {
                         return
                             storage.GetTodo id
+                    }
+      removeTodo = fun id ->
+                    async {
+                        do storage.RemoveTodo id
                     }}
 
 let webApp =
