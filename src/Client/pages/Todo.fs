@@ -2,9 +2,11 @@ module Todo
 
 open Shared
 open Elmish
+open Elmish.Navigation
 open Feliz
 open Feliz.Bulma
 open Fable.Remoting.Client
+open Urls
 
 type WebData<'data, 'error> =
     | NotStarted
@@ -16,6 +18,8 @@ type Model = { Todo: WebData<Todo, AppError> }
 
 type Msg =
     | GotTodo of Result<Todo, AppError>
+    | RemoveTodo of int
+    | RemovedTodo of unit
 
 let todosApi =
     Remoting.createApi ()
@@ -33,8 +37,17 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
                         | Ok todo -> Loaded todo
                         | Error error -> Errored error
         { model with Todo = newModel}, Cmd.none
+    | RemoveTodo id ->
+        let cmd = Cmd.OfAsync.perform todosApi.removeTodo id RemovedTodo
 
-let todoView (todo: Todo) =
+        model, cmd
+
+    | RemovedTodo _ -> 
+        let cmd = Navigation.newUrl "/"
+
+        model, cmd
+
+let todoView (todo: Todo) (dispatch: Msg -> unit) =
     Bulma.heroBody [
         Bulma.container [
             Bulma.column [
@@ -47,7 +60,11 @@ let todoView (todo: Todo) =
                     ]
                     Bulma.box [
                         Bulma.content [
-
+                            Bulma.button.a [
+                                color.isDanger
+                                prop.onClick (fun _ -> dispatch <| RemoveTodo todo.Id)
+                                prop.text "Delete"
+                            ]
                         ]
                     ]
                 ]
@@ -58,8 +75,8 @@ let todoView (todo: Todo) =
 let view (model: Model) (dispatch: Msg -> unit) =
     match model.Todo with
     | Loading | NotStarted -> Html.h1 "...loading"
-    | Loaded todo -> todoView todo
+    | Loaded todo -> todoView todo dispatch
     | Errored error ->
         match error with
-            | NotFound -> Html.h1 "not found"
+            | AppError.NotFound -> Html.h1 "not found"
             | Request message -> Html.h1 message
