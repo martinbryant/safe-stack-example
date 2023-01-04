@@ -6,6 +6,7 @@ open Elmish.Navigation
 open Feliz
 open Feliz.Bulma
 open Fable.Remoting.Client
+open System
 
 type WebData<'data, 'error> =
     | NotStarted
@@ -47,6 +48,9 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         model, cmd
 
 let todoView (todo: Todo) (dispatch: Msg -> unit) =
+    let createdDate = if todo.Created = DateTime.MinValue
+                        then "Unknown"
+                        else todo.Created.ToShortDateString()
     Bulma.heroBody [
         Bulma.container [
             Bulma.column [
@@ -60,7 +64,7 @@ let todoView (todo: Todo) (dispatch: Msg -> unit) =
                     Bulma.box [
                         Bulma.content [
                             Bulma.label [
-                                prop.text (sprintf "Created on %s" <| todo.Created.ToShortDateString())
+                                prop.text (sprintf "Created on %s" createdDate)
                             ]
                             Bulma.button.a [
                                 color.isDanger
