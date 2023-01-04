@@ -6,7 +6,6 @@ open Elmish.Navigation
 open Feliz
 open Feliz.Bulma
 open Fable.Remoting.Client
-open Urls
 
 type WebData<'data, 'error> =
     | NotStarted
@@ -42,7 +41,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 
         model, cmd
 
-    | RemovedTodo _ -> 
+    | RemovedTodo _ ->
         let cmd = Navigation.newUrl "/"
 
         model, cmd
@@ -60,6 +59,9 @@ let todoView (todo: Todo) (dispatch: Msg -> unit) =
                     ]
                     Bulma.box [
                         Bulma.content [
+                            Bulma.label [
+                                prop.text (sprintf "Created on %s" <| todo.Created.ToShortDateString())
+                            ]
                             Bulma.button.a [
                                 color.isDanger
                                 prop.onClick (fun _ -> dispatch <| RemoveTodo todo.Id)
@@ -78,5 +80,5 @@ let view (model: Model) (dispatch: Msg -> unit) =
     | Loaded todo -> todoView todo dispatch
     | Errored error ->
         match error with
-            | AppError.NotFound -> Html.h1 "not found"
+            | NotFound -> Html.h1 "not found"
             | Request message -> Html.h1 message
