@@ -3,7 +3,7 @@ namespace Shared
 open System
 
 [<CLIMutable>]
-type Todo = { Id: int; Description: string; Created: DateTime }
+type Todo = { Id: int; Description: string; Created: DateTime option }
 
 module Todo =
     let isValid (description: string) =
@@ -12,7 +12,7 @@ module Todo =
     let create (description: string) =
         { Id = 0
           Description = description
-          Created = DateTime.UtcNow }
+          Created = Some DateTime.UtcNow }
 
 module Route =
     let builder typeName methodName =
