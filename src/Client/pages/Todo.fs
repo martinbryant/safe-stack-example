@@ -48,9 +48,9 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         model, cmd
 
 let todoView (todo: Todo) (dispatch: Msg -> unit) =
-    let createdDate = if todo.Created = DateTime.MinValue
-                        then "Unknown"
-                        else todo.Created.ToShortDateString()
+    let createdDate = match todo.Created with
+                        | None -> "Created date unknown"
+                        | Some date -> sprintf "Created on %s" (date.ToShortDateString())
     Bulma.heroBody [
         Bulma.container [
             Bulma.column [
@@ -64,7 +64,7 @@ let todoView (todo: Todo) (dispatch: Msg -> unit) =
                     Bulma.box [
                         Bulma.content [
                             Bulma.label [
-                                prop.text (sprintf "Created on %s" createdDate)
+                                prop.text createdDate
                             ]
                             Bulma.button.a [
                                 color.isDanger
