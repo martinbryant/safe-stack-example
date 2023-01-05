@@ -8,6 +8,7 @@ open Feliz.Bulma
 type Page =
     | TodoList of TodoList.Model
     | Todo of Todo.Model
+    | OrderTodos of OrderTodos.Model
     | NotFound
 
 type Model =
@@ -16,12 +17,16 @@ type Model =
 type Msg =
     | TodoListMsg of TodoList.Msg
     | TodoMsg of Todo.Msg
+    | OrderTodosMsg of OrderTodos.Msg
 
 let initFromUrl url =
     match url with
     | Url.TodoList ->
         let model, cmd = TodoList.init ()
         { CurrentPage = TodoList model }, Cmd.map TodoListMsg cmd
+    | Url.OrderTodos ->
+        let model, cmd = OrderTodos.init ()
+        { CurrentPage = OrderTodos model }, Cmd.map OrderTodosMsg cmd
     | Url.Todo id ->
         let model, cmd = Todo.init id
         { CurrentPage = Todo model }, Cmd.map TodoMsg cmd
@@ -46,6 +51,12 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         let nextState = { model with CurrentPage = Todo todoModel }
         let nextCmd = Cmd.map TodoMsg todoCmd
         nextState, nextCmd
+
+    | OrderTodos todoModel, OrderTodosMsg todoMsg ->
+        let todoModel, todoCmd = OrderTodos.update todoMsg todoModel
+        let nextState = { model with CurrentPage = OrderTodos todoModel }
+        let nextCmd = Cmd.map OrderTodosMsg todoCmd
+        nextState, nextCmd
     | NotFound, _ | _, _ ->
         model, Cmd.none
 
@@ -53,6 +64,9 @@ let viewPage (model: Model) (dispatch: Msg -> unit) =
     match model.CurrentPage with
     | TodoList pageModel ->
         TodoList.view pageModel (dispatch << TodoListMsg)
+
+    | OrderTodos pageModel ->
+        OrderTodos.view pageModel (dispatch << OrderTodosMsg)
 
     | Todo pageModel ->
         Todo.view pageModel (dispatch << TodoMsg)

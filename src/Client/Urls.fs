@@ -5,6 +5,7 @@ open Microsoft.FSharp.Reflection
 type Url =
     | TodoList
     | Todo of int
+    | OrderTodos
     | NotFound
 
     member this.asString =

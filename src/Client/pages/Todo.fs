@@ -6,7 +6,6 @@ open Elmish.Navigation
 open Feliz
 open Feliz.Bulma
 open Fable.Remoting.Client
-open System
 
 type WebData<'data, 'error> =
     | NotStarted

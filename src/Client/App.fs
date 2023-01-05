@@ -13,9 +13,10 @@ open Elmish.HMR
 let pageParser : Parser<Url->Url, Url> =
   oneOf
     [
-      map Url.TodoList top
-      map Url.TodoList (s Url.TodoList.asString)
-      map Url.Todo (s "todo" </> i32)
+      map TodoList top
+      map TodoList (s Url.TodoList.asString)
+      map Todo (s "todo" </> i32)
+      map OrderTodos (s "order")
     ]
 
 let urlUpdate (result:Option<Url>) model =
