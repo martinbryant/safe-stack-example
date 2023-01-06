@@ -3,6 +3,7 @@ module OrderTodos
 open Elmish
 open Shared
 open Fable.Remoting.Client
+open ReactDnD
 
 type Model = { Todos: Todo list; }
 
@@ -37,11 +38,21 @@ let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo ) =
         ]
     ]
 
+let onDragEnd result = ()
+
 let containerBox (model: Model) (dispatch: Msg -> unit) =
     let todoItem = todoItem model dispatch
     Bulma.box [
         Bulma.content [
-            Html.ol (List.map todoItem model.Todos)
+            dragDropContext
+                [ OnDragEnd onDragEnd ]
+                [ droppable
+                    [ DroppableId "droppable" ]
+                    [
+                        fun (provided, snapshot) ->
+                            Html.ol (List.map todoItem model.Todos)
+                    ]
+                 ]
         ]
     ]
 

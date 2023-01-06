@@ -5,6 +5,8 @@
     <DefineConstants>FABLE_COMPILER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="components\ReactDnD.fs" />
+    <Compile Include="components/ReactDnD.fs" />
     <Compile Include="pages/OrderTodos.fs" />
     <Compile Include="Urls.fs" />
     <Compile Include="pages/Todo.fs" />
