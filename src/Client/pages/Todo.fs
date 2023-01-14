@@ -81,16 +81,25 @@ let todoView (todo: Todo) (dispatch: Msg -> unit) =
                             Bulma.label [
                                 prop.text createdDate
                             ]
-                            Bulma.button.a [
-                                color.isSuccess
-                                prop.disabled todo.Completed
-                                prop.onClick (fun _ -> dispatch <| CompleteTodo todo.Id)
-                                prop.text "Complete"
-                            ]
-                            Bulma.button.a [
-                                color.isDanger
-                                prop.onClick (fun _ -> dispatch <| RemoveTodo todo.Id)
-                                prop.text "Delete"
+                            Bulma.field.div [
+                                field.isGrouped
+                                prop.children [
+                                    Bulma.control.p [
+                                        Bulma.button.a [
+                                            color.isSuccess
+                                            prop.disabled todo.Completed
+                                            prop.onClick (fun _ -> dispatch <| CompleteTodo todo.Id)
+                                            prop.text "Complete"
+                                        ]
+                                    ]
+                                    Bulma.control.p [
+                                        Bulma.button.a [
+                                            color.isDanger
+                                            prop.onClick (fun _ -> dispatch <| RemoveTodo todo.Id)
+                                            prop.text "Delete"
+                                        ]
+                                    ]
+                                ]
                             ]
                         ]
                     ]
