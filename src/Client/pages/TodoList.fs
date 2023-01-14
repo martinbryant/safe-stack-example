@@ -48,11 +48,19 @@ open Feliz.Bulma
 
 let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo ) =
     let clickTodo = fun _ -> todo.Id |> TodoClicked |> dispatch
+    let completeStyle =
+        if todo.Completed
+            then
+                [ "strikethrough" ]
+            else
+                []
+
     Html.li [
         Html.a [
+            prop.classes completeStyle
             prop.onClick clickTodo
             prop.text todo.Description ]
-                ]
+        ]
 
 let containerBox (model: Model) (dispatch: Msg -> unit) =
     let todoItem = todoItem model dispatch

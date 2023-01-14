@@ -49,6 +49,21 @@ type Storage() as storage =
         | null -> Error <| NotFound
         | _ -> Ok result
 
+    member _.CompleteTodo (id: int) =
+        let identifier = BsonValue(id)
+        let findResult = todos.FindById(identifier)
+        let result = match box findResult with
+                        | null -> Error <| NotFound
+                        | _ -> Ok findResult
+
+        Result.map Todo.complete result
+            |> Result.bind (fun todo ->
+                                if todos.Update todo
+                                    then
+                                        Ok todo
+                                    else
+                                        Error <| Request "Failed to update database")
+
     member _.RemoveTodo (id: int) =
         let identifier = BsonValue(id)
         todos.Delete(identifier) |> ignore
@@ -73,7 +88,11 @@ let todosApi =
       removeTodo = fun id ->
                     async {
                         do storage.RemoveTodo id
-                    }}
+                    }
+      completeTodo = fun id ->
+                        async {
+                            return storage.CompleteTodo id
+                        }}
 
 let webApp =
     Remoting.createApi ()

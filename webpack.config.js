@@ -23,7 +23,9 @@ const CONFIG = {
             target: 'http://localhost:' + (process.env.SERVER_PROXY_PORT || '5000'),
             ws: true
         }
-    }
+    },
+    cssEntry: './src/Client/style.css',
+
 };
 
 const TEST_CONFIG = {
@@ -58,9 +60,13 @@ module.exports = function(env, arg) {
         // have a faster HMR support. In production bundle styles together
         // with the code because the MiniCssExtractPlugin will extract the
         // CSS in a separate files.
-        entry: {
-            app: resolve(config.fsharpEntry)
+        entry: isProduction ? {
+            app: [resolve(CONFIG.fsharpEntry), resolve(CONFIG.cssEntry)]
+        } : {
+            app: resolve(CONFIG.fsharpEntry),
+            style: resolve(CONFIG.cssEntry)
         },
+
         // Add a hash to the output file name in production
         // to prevent browser caching if code changes
         output: {
