@@ -4,6 +4,7 @@ open Elmish
 open Shared
 open Fable.Remoting.Client
 open ReactDnD
+open Fable.Core
 
 type Model = { Todos: Todo list; }
 
@@ -30,13 +31,11 @@ open Feliz
 open Feliz.Bulma
 
 let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo ) =
-    Html.li [
-        Bulma.box [
-            Bulma.content [
-                prop.text todo.Description
-            ]
-        ]
-    ]
+    Bulma.box [
+                                    Bulma.content [
+                                        prop.text todo.Description
+                                    ]
+                                ]
 
 let onDragEnd result = ()
 
@@ -48,10 +47,12 @@ let containerBox (model: Model) (dispatch: Msg -> unit) =
                 [ OnDragEnd onDragEnd ]
                 [ droppable
                     [ DroppableId "droppable" ]
-                    [
-                        fun (provided, snapshot) ->
-                            Html.ol (List.map todoItem model.Todos)
-                    ]
+                    (fun (provided, snapshot) ->
+                        JS.console.log snapshot
+                        Html.div [
+                            prop.ref provided.innerRef
+                            prop.children (List.map todoItem model.Todos)
+                        ])
                  ]
         ]
     ]
