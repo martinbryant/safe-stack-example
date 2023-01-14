@@ -20,6 +20,8 @@ type Msg =
     | GotTodo of Result<Todo, AppError>
     | RemoveTodo of int
     | RemovedTodo of unit
+    | CompleteTodo of int
+    | CompletedTodo of Result<Todo, AppError>
 
 let todosApi =
     Remoting.createApi ()
@@ -47,6 +49,19 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 
         model, cmd
 
+    | CompleteTodo id ->
+        let cmd = Cmd.OfAsync.perform todosApi.completeTodo id CompletedTodo
+        let model = { model with Todo = Loading }
+
+        model, cmd
+
+    | CompletedTodo result ->
+        match result with
+        | Ok todo -> { model with Todo = Loaded todo }, Cmd.none
+        | Error error -> match error with
+                            | NotFound -> model, Navigation.newUrl "/"
+                            | _ -> { model with Todo = Errored error }, Cmd.none
+
 let todoView (todo: Todo) (dispatch: Msg -> unit) =
     let createdDate = match todo.Created with
                         | None -> "Created date unknown"
@@ -65,6 +80,12 @@ let todoView (todo: Todo) (dispatch: Msg -> unit) =
                         Bulma.content [
                             Bulma.label [
                                 prop.text createdDate
+                            ]
+                            Bulma.button.a [
+                                color.isSuccess
+                                prop.disabled todo.Completed
+                                prop.onClick (fun _ -> dispatch <| CompleteTodo todo.Id)
+                                prop.text "Complete"
                             ]
                             Bulma.button.a [
                                 color.isDanger
