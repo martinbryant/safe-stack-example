@@ -2,3 +2,4 @@ Saturn
 Fable.Remoting.Giraffe
 Fsharp.Core
 LiteDB.FSharp
+CosmoStore.LiteDb

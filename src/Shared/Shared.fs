@@ -2,6 +2,18 @@ namespace Shared
 
 open System
 
+type TodoEvent =
+    | Something
+
+type AddTodo = {
+    Id: int
+    Description: string
+}
+
+type CompleteTodo = {
+    Id: int
+}
+
 [<CLIMutable>]
 type Todo = {
                 Id: int;

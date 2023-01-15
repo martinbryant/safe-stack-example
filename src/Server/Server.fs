@@ -7,7 +7,6 @@ open Saturn
 open Shared
 open LiteDB.FSharp
 open LiteDB
-open Shared
 open System.IO
 
 type Storage() as storage =
