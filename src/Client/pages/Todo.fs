@@ -14,7 +14,11 @@ type WebData<'data, 'error> =
     | Loaded of 'data
     | Errored of 'error
 
-type Model = { Todo: WebData<Todo, AppError> }
+type ConfirmationOpen =
+    | Open of int
+    | Closed
+
+type Model = { Todo: WebData<Todo, AppError>; IsConfirmationOpen: ConfirmationOpen }
 
 type Msg =
     | GotTodo of Result<Todo, AppError>
@@ -22,6 +26,8 @@ type Msg =
     | RemovedTodo of unit
     | CompleteTodo of int
     | CompletedTodo of Result<Todo, AppError>
+    | RequestRemove of int
+    | CancelRemoveRequest
 
 let todosApi =
     Remoting.createApi ()
@@ -30,7 +36,7 @@ let todosApi =
 
 let init (id: int) : Model * Cmd<Msg> =
     let cmd = Cmd.OfAsync.perform todosApi.getTodo id GotTodo
-    { Todo = Loading }, cmd
+    { Todo = Loading; IsConfirmationOpen = Closed }, cmd
 
 let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
@@ -62,6 +68,54 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
                             | NotFound -> model, Navigation.newUrl "/"
                             | _ -> { model with Todo = Errored error }, Cmd.none
 
+    | RequestRemove id ->
+        let model = { model with IsConfirmationOpen = Open id }
+
+        model, Cmd.none
+
+    | CancelRemoveRequest ->
+        let model = { model with IsConfirmationOpen = Closed }
+
+        model, Cmd.none
+
+let confirmationModal (model: Model) (dispatch: Msg -> unit) =
+    let id =
+        match model.IsConfirmationOpen with
+        | Open id -> id
+        | Closed -> 0
+
+    Bulma.modal [
+        prop.id "modal"
+        if model.IsConfirmationOpen <> Closed then modal.isActive
+        prop.children [
+            Bulma.modalBackground []
+            Bulma.modalContent [
+                Bulma.box [
+                    Html.h1 "Are you sure you want to remove this?"
+                    Bulma.field.div [
+                        field.isGrouped
+                        prop.children [
+                            Bulma.control.p [
+                                Bulma.button.a [
+                                    color.isDanger
+                                    prop.onClick (fun _ -> dispatch <| RemoveTodo id)
+                                    prop.text "Confirm"
+                                ]
+                            ]
+                            Bulma.control.p [
+                                Bulma.button.a [
+                                    color.isLight
+                                    prop.onClick (fun _ -> dispatch <| CancelRemoveRequest)
+                                    prop.text "Cancel"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ]
+
 let todoControls (todo: Todo) (dispatch: Msg -> unit) =
     Bulma.field.div [
         field.isGrouped
@@ -77,7 +131,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
             Bulma.control.p [
                 Bulma.button.a [
                     color.isDanger
-                    prop.onClick (fun _ -> dispatch <| RemoveTodo todo.Id)
+                    prop.onClick (fun _ -> dispatch <| RequestRemove todo.Id)
                     prop.text "Delete"
                 ]
             ]
@@ -136,4 +190,5 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 ]
             ]
         ]
+        confirmationModal model dispatch
     ]
