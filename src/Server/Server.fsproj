@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="paket.references" />
-    <Compile Include="Event.fs" />
+    <Compile Include="EventStore.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
   <ItemGroup>

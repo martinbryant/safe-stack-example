@@ -2,9 +2,6 @@ namespace Shared
 
 open System
 
-type TodoEvent =
-    | Something
-
 type AddTodo = {
     Id: int
     Description: string
@@ -16,10 +13,11 @@ type CompleteTodo = {
 
 [<CLIMutable>]
 type Todo = {
-                Id: int;
-                Description: string;
-                Created: DateTime option;
-                Completed: bool }
+    Id: int;
+    Description: string;
+    Created: DateTime option;
+    Completed: bool
+}
 
 module Todo =
     let isValid (description: string) =
