@@ -4,9 +4,10 @@ POST {{host}}/ITodosApi/addTodo
 Content-Type: application/json
 Accept: application/json
 
-{
-    "description": "something"
-}
+[{
+    "Description": "hhhh",
+    "Completed": false
+}]
 
 ###
 

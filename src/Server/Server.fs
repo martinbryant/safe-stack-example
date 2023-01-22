@@ -8,6 +8,7 @@ open Shared
 open LiteDB.FSharp
 open LiteDB
 open System.IO
+open EventStore
 
 type Storage() as storage =
     let current = Directory.GetCurrentDirectory()
@@ -70,14 +71,20 @@ type Storage() as storage =
 let todosApi =
     let storage = Storage()
 
-    { getTodos = fun () -> async { return storage.GetTodos() }
+    let eventStorage = EventStore()
+
+    { getTodos =
+        fun () ->
+            async {
+                let! events = eventStorage.GetEvents ()
+                return storage.GetTodos()
+                }
       addTodo =
         fun todo ->
             async {
-                return
-                    match storage.AddTodo todo with
-                    | Ok newTodo -> newTodo
-                    | Error e -> failwith e
+                let created = { Description = todo.Description }
+                let! event = eventStorage.AddTodo created
+                return todo
             }
       getTodo = fun id ->
                     async {
@@ -97,6 +104,7 @@ let webApp =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.fromValue todosApi
+    |> Remoting.withDiagnosticsLogger (printfn "%s")
     |> Remoting.buildHttpHandler
 
 let app =

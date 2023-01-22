@@ -27,7 +27,7 @@ type EventStore() =
 
     let config : Configuration = {
         DBMode = Exclusive
-        Folder = directory
+        Folder = "data"
         StoreType = LocalDB
         Name = "TodoEvent.db"
     }
@@ -40,46 +40,48 @@ type EventStore() =
     let appendEvent = eventStore.AppendEvent streamId
 
     member _.AddTodo (data: CreatedTodoData) =
-        let event: EventWrite<BsonValue> = {
+        let event = {
             Id = Guid.NewGuid()
             CorrelationId = None
             CausationId = None
             Name = nameof(Created)
-            Data = BsonValue(data)
+            Data = data
             Metadata = None
         }
 
         appendEvent NoStream event
             |> Async.AwaitTask
-            |> Async.RunSynchronously
 
-    member _.CompleteTodo () =
-        let event: EventWrite<BsonValue> = {
-            Id = Guid.NewGuid()
-            CorrelationId = None
-            CausationId = None
-            Name = (nameof(Completed))
-            Data = BsonValue()
-            Metadata = None
-        }
-
-        appendEvent Any event
+    member _.GetEvents () =
+        eventStore.GetEvents streamId AllEvents
             |> Async.AwaitTask
-            |> Async.RunSynchronously
 
-    member _.DeleteTodo () =
-        let event: EventWrite<BsonValue> = {
-            Id = Guid.NewGuid()
-            CorrelationId = None
-            CausationId = None
-            Name = (nameof(Deleted))
-            Data = BsonValue()
-            Metadata = None
-        }
+    // member _.CompleteTodo () =
+    //     let event: EventWrite<BsonValue> = {
+    //         Id = Guid.NewGuid()
+    //         CorrelationId = None
+    //         CausationId = None
+    //         Name = (nameof(Completed))
+    //         Data = BsonValue()
+    //         Metadata = None
+    //     }
 
-        appendEvent Any event
-            |> Async.AwaitTask
-            |> Async.RunSynchronously
+    //     appendEvent Any event
+    //         |> Async.AwaitTask
+
+    // member _.DeleteTodo () =
+    //     let event: EventWrite<BsonValue> = {
+    //         Id = Guid.NewGuid()
+    //         CorrelationId = None
+    //         CausationId = None
+    //         Name = (nameof(Deleted))
+    //         Data = BsonValue()
+    //         Metadata = None
+    //     }
+
+    //     appendEvent Any event
+    //         |> Async.AwaitTask
+    //         |> Async.RunSynchronously
 
 
 
