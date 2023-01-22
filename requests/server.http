@@ -1,0 +1,29 @@
+@host = http://localhost:5000/api
+
+POST {{host}}/ITodosApi/addTodo
+Content-Type: application/json
+Accept: application/json
+
+{
+    "description": "something"
+}
+
+###
+
+GET {{host}}/ITodosApi/getTodos
+Content-Type: application/json
+Accept: application/json
+
+###
+
+GET {{host}}/ITodosApi/getTodo/1
+Content-Type: application/json
+Accept: application/json
+
+###
+
+GET {{host}}/ITodosApi/completeTodo
+Content-Type: application/json
+Accept: application/json
+
+###
