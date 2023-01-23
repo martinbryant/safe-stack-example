@@ -2,15 +2,6 @@ namespace Shared
 
 open System
 
-type AddTodo = {
-    Id: int
-    Description: string
-}
-
-type CompleteTodo = {
-    Id: int
-}
-
 [<CLIMutable>]
 type Todo = {
     Id: Guid

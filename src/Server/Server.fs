@@ -35,7 +35,7 @@ type Storage() as storage =
     member _.GetTodos () =
         todos.FindAll () |> List.ofSeq
 
-    member _.AddTodo (todo:Todo) =
+    member _.AddTodo (todo: Todo) =
         if Todo.isValid todo.Description then
             let id = (todos.Insert todo).AsGuid
             let newTodo = { todo with Id = id }
@@ -85,7 +85,7 @@ let todosApi =
             async {
                 let created = {
                     Id = todo.Id
-                    Description = todo.Description
+                    Description = Some todo.Description
                     }
                 let! event = eventStorage.AddTodo created
                 return todo
