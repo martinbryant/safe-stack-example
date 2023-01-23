@@ -4,6 +4,7 @@ open Elmish
 open Urls
 open Feliz
 open Feliz.Bulma
+open System
 
 type Page =
     | TodoList of TodoList.Model
@@ -23,7 +24,7 @@ let initFromUrl url =
         let model, cmd = TodoList.init ()
         { CurrentPage = TodoList model }, Cmd.map TodoListMsg cmd
     | Url.Todo id ->
-        let model, cmd = Todo.init id
+        let model, cmd = Todo.init (Guid.Parse id)
         { CurrentPage = Todo model }, Cmd.map TodoMsg cmd
     | Url.NotFound -> { CurrentPage = NotFound }, Cmd.none
 

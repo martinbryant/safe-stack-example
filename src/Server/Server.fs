@@ -9,6 +9,7 @@ open LiteDB.FSharp
 open LiteDB
 open System.IO
 open EventStore
+open System
 
 type Storage() as storage =
     let current = Directory.GetCurrentDirectory()
@@ -36,20 +37,20 @@ type Storage() as storage =
 
     member _.AddTodo (todo:Todo) =
         if Todo.isValid todo.Description then
-            let id = (todos.Insert todo).AsInt32
+            let id = (todos.Insert todo).AsGuid
             let newTodo = { todo with Id = id }
             Ok newTodo
         else
             Error "Invalid todo"
 
-    member _.GetTodo (id: int) =
+    member _.GetTodo (id: Guid) =
         let identifier = BsonValue(id)
         let result = todos.FindById(identifier)
         match box result with
         | null -> Error <| NotFound
         | _ -> Ok result
 
-    member _.CompleteTodo (id: int) =
+    member _.CompleteTodo (id: Guid) =
         let identifier = BsonValue(id)
         let findResult = todos.FindById(identifier)
         let result = match box findResult with
@@ -64,7 +65,7 @@ type Storage() as storage =
                                     else
                                         Error <| Request "Failed to update database")
 
-    member _.RemoveTodo (id: int) =
+    member _.RemoveTodo (id: Guid) =
         let identifier = BsonValue(id)
         todos.Delete(identifier) |> ignore
 
@@ -82,7 +83,10 @@ let todosApi =
       addTodo =
         fun todo ->
             async {
-                let created = { Description = todo.Description }
+                let created = {
+                    Id = todo.Id
+                    Description = todo.Description
+                    }
                 let! event = eventStorage.AddTodo created
                 return todo
             }

@@ -18,9 +18,9 @@ type Model = { Todo: WebData<Todo, AppError> }
 
 type Msg =
     | GotTodo of Result<Todo, AppError>
-    | RemoveTodo of int
+    | RemoveTodo of Guid
     | RemovedTodo of unit
-    | CompleteTodo of int
+    | CompleteTodo of Guid
     | CompletedTodo of Result<Todo, AppError>
 
 let todosApi =
@@ -28,7 +28,7 @@ let todosApi =
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<ITodosApi>
 
-let init (id: int) : Model * Cmd<Msg> =
+let init (id: Guid) : Model * Cmd<Msg> =
     let cmd = Cmd.OfAsync.perform todosApi.getTodo id GotTodo
     { Todo = Loading }, cmd
 

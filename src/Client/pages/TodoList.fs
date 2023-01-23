@@ -4,6 +4,7 @@ open Elmish
 open Elmish.Navigation
 open Fable.Remoting.Client
 open Shared
+open System
 
 type Model = { Todos: Todo list; Input: string }
 
@@ -12,7 +13,7 @@ type Msg =
     | SetInput of string
     | AddTodo
     | AddedTodo of Todo
-    | TodoClicked of int
+    | TodoClicked of Guid
 
 let todosApi =
     Remoting.createApi ()

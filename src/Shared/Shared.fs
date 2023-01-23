@@ -13,9 +13,9 @@ type CompleteTodo = {
 
 [<CLIMutable>]
 type Todo = {
-    Id: int;
-    Description: string;
-    Created: DateTime option;
+    Id: Guid
+    Description: string
+    Created: DateTime option
     Completed: bool
 }
 
@@ -24,7 +24,7 @@ module Todo =
         String.IsNullOrWhiteSpace description |> not
 
     let create (description: string) =
-        { Id = 0
+        { Id = Guid.NewGuid ()
           Description = description
           Created = Some DateTime.UtcNow
           Completed = false }
@@ -44,6 +44,6 @@ type AppError =
 type ITodosApi =
     { getTodos: unit -> Async<Todo list>
       addTodo: Todo -> Async<Todo>
-      getTodo: int -> Async<Result<Todo, AppError>>
-      removeTodo: int -> Async<unit>
-      completeTodo: int -> Async<Result<Todo, AppError>> }
+      getTodo: Guid -> Async<Result<Todo, AppError>>
+      removeTodo: Guid -> Async<unit>
+      completeTodo: Guid -> Async<Result<Todo, AppError>> }

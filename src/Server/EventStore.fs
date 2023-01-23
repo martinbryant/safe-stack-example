@@ -3,12 +3,11 @@ module EventStore
 open CosmoStore
 open CosmoStore.LiteDb
 open System.IO
-open Shared
 open System
-open LiteDB
 
 type CreatedTodoData = {
-    Description: string;
+    Id: Guid
+    Description: string
 }
 
 type TodoEvent =
@@ -42,7 +41,7 @@ type EventStore() =
     member _.AddTodo (data: CreatedTodoData) =
         let event = {
             Id = Guid.NewGuid()
-            CorrelationId = None
+            CorrelationId = Some data.Id
             CausationId = None
             Name = nameof(Created)
             Data = data
