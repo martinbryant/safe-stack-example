@@ -82,14 +82,16 @@ let todosApi =
                 }
       addTodo =
         fun todo ->
-            async {
-                let created = {
-                    Id = todo.Id
-                    Description = Some todo.Description
-                    }
-                let! event = eventStorage.AddTodo created
-                return todo
-            }
+            try
+                async {
+                    let created = {
+                        Id = todo.Id
+                        Description = Some todo.Description
+                        }
+                    let! event = eventStorage.AddTodo created
+                    return todo
+                }
+            with ex -> failwith ex.Message
       getTodo = fun id ->
                     async {
                         return

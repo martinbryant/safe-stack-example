@@ -35,16 +35,32 @@ type EventStore() =
 
     let folder (state: Todo option) (event: EventRead<TodoData, int64>): Todo option =
         match event.Name with
-        | nameof(Created) -> Some { Id = Option.defaultValue (Guid.NewGuid()) event.CorrelationId; Description = event.Data.Description |> Option.defaultValue ""; Created = Some event.CreatedUtc; Completed = false }
+        | nameof(Created) ->
+            let todo = {
+                Id = Option.defaultValue (Guid.NewGuid()) event.CorrelationId
+                Description = event.Data.Description |> Option.defaultValue ""
+                Created = Some event.CreatedUtc
+                Completed = false
+                Deleted = false
+            }
+
+            Some todo
+        | nameof(Completed) ->
+            Option.map (fun todo -> { todo with Completed = true }) state
+
+        | nameof(Deleted) ->
+            Option.map (fun todo -> { todo with Deleted = true }) state
+
         | _ -> None
 
-    member _.GetTodo (id: Guid) =
 
-        let events = task {
+    member _.GetTodo (id: Guid) =
+        task {
             let! events = eventStore.GetEventsByCorrelationId id
 
             return List.fold folder None events
-            }
+        }
+        |> Async.AwaitTask
 
     member _.AddTodo (data: TodoData) =
         let event = {

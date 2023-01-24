@@ -8,6 +8,7 @@ type Todo = {
     Description: string
     Created: DateTime option
     Completed: bool
+    Deleted: bool
 }
 
 module Todo =
@@ -18,7 +19,8 @@ module Todo =
         { Id = Guid.NewGuid ()
           Description = description
           Created = Some DateTime.UtcNow
-          Completed = false }
+          Completed = false
+          Deleted = false }
 
     let complete (todo: Todo) =
         { todo with Completed = true }
