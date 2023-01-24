@@ -5,6 +5,8 @@ open CosmoStore.LiteDb
 open System.IO
 open System
 open Shared
+open Microsoft.FSharp.Reflection
+open Shared.Todo
 
 type TodoData = {
     Id: Guid
@@ -15,6 +17,20 @@ type TodoEvent =
     | Created
     | Completed
     | Deleted
+
+let fromString (s: string) =
+    let caseInfo =
+        FSharpType.GetUnionCases typeof<TodoEvent>
+        |> Array.tryFind (fun case -> case.Name.ToLower() = s.ToLower())
+
+    match caseInfo with
+    | Some case ->
+        match case.GetFields() with
+        | [||] ->
+            FSharpValue.MakeUnion(case, [||]) :?> TodoEvent |> Some
+        | _ ->
+            FSharpValue.MakeUnion(case,  [| "" |> box |] ) :?> TodoEvent |> Some
+    | _ -> None
 
 type EventStore() =
 
@@ -33,32 +49,35 @@ type EventStore() =
 
     let appendEvent = eventStore.AppendEvent streamId
 
-    let folder (state: Todo option) (event: EventRead<TodoData, int64>): Todo option =
-        match event.Name with
-        | nameof(Created) ->
-            let todo = {
-                Id = Option.defaultValue (Guid.NewGuid()) event.CorrelationId
-                Description = event.Data.Description |> Option.defaultValue ""
-                Created = Some event.CreatedUtc
-                Completed = false
-                Deleted = false
-            }
+    let stateFolder (state: Todo) (event: EventRead<TodoData, int64>): Todo =
+        match fromString event.Name with
+        | Some case ->
+            match case with
+            | Created ->
+                let todo = {
+                    Id = Option.defaultValue (Guid.NewGuid()) event.CorrelationId
+                    Description = event.Data.Description |> Option.defaultValue ""
+                    Created = Some event.CreatedUtc
+                    Completed = false
+                    Deleted = false
+                }
+                todo
 
-            Some todo
-        | nameof(Completed) ->
-            Option.map (fun todo -> { todo with Completed = true }) state
+            | Completed ->
+                { state with Completed = true }
 
-        | nameof(Deleted) ->
-            Option.map (fun todo -> { todo with Deleted = true }) state
+            | Deleted ->
+                { state with Deleted = true }
+        | None -> failwith ""
 
-        | _ -> None
-
+    let optionStateFolder (state: Todo option) (event: EventRead<TodoData, int64>): Todo option =
+        Option.map (fun todo -> stateFolder todo event) state
 
     member _.GetTodo (id: Guid) =
         task {
             let! events = eventStore.GetEventsByCorrelationId id
 
-            let todo = List.fold folder None events
+            let todo = List.fold optionStateFolder None events
 
             return match todo with
                     | Some todo -> Ok todo
@@ -105,8 +124,14 @@ type EventStore() =
         appendEvent Any event
             |> Async.AwaitTask
 
-    member _.GetEvents () =
-        eventStore.GetEvents streamId AllEvents
-            |> Async.AwaitTask
+    member _.GetTodos () =
+        task {
+            let! events = eventStore.GetEvents streamId AllEvents
+
+            return events
+                    |> List.groupBy (fun event -> event.CorrelationId)
+                    |> List.map (fun (_, list) -> List.fold stateFolder defaultTodo list)
+        }
+        |> Async.AwaitTask
 
 

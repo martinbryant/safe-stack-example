@@ -12,6 +12,13 @@ type Todo = {
 }
 
 module Todo =
+    let defaultTodo =
+        { Id = Guid.Empty
+          Description = String.Empty
+          Created = None
+          Completed = false
+          Deleted = false }
+
     let isValid (description: string) =
         String.IsNullOrWhiteSpace description |> not
 

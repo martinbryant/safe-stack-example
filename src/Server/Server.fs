@@ -77,8 +77,7 @@ let todosApi =
     { getTodos =
         fun () ->
             async {
-                let! events = eventStorage.GetEvents ()
-                return storage.GetTodos()
+                return! eventStorage.GetTodos ()
                 }
       addTodo =
         fun todo ->
