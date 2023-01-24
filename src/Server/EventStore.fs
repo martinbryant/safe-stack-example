@@ -4,6 +4,7 @@ open CosmoStore
 open CosmoStore.LiteDb
 open System.IO
 open System
+open Shared
 
 type TodoData = {
     Id: Guid
@@ -31,6 +32,19 @@ type EventStore() =
         config |> EventStore.getEventStore
 
     let appendEvent = eventStore.AppendEvent streamId
+
+    let folder (state: Todo option) (event: EventRead<TodoData, int64>): Todo option =
+        match event.Name with
+        | nameof(Created) -> Some { Id = Option.defaultValue (Guid.NewGuid()) event.CorrelationId; Description = event.Data.Description |> Option.defaultValue ""; Created = Some event.CreatedUtc; Completed = false }
+        | _ -> None
+
+    member _.GetTodo (id: Guid) =
+
+        let events = task {
+            let! events = eventStore.GetEventsByCorrelationId id
+
+            return List.fold folder None events
+            }
 
     member _.AddTodo (data: TodoData) =
         let event = {
