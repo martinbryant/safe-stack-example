@@ -58,7 +58,11 @@ type EventStore() =
         task {
             let! events = eventStore.GetEventsByCorrelationId id
 
-            return List.fold folder None events
+            let todo = List.fold folder None events
+
+            return match todo with
+                    | Some todo -> Ok todo
+                    | None -> Error NotFound
         }
         |> Async.AwaitTask
 
