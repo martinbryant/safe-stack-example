@@ -20,9 +20,11 @@ Accept: application/json
 
 ###
 
-GET {{host}}/ITodosApi/getTodo/1
+POST {{host}}/ITodosApi/getTodo
 Content-Type: application/json
 Accept: application/json
+
+["de42ed3d-3fda-4403-888e-60aa39940b43"]
 
 ###
 

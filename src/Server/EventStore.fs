@@ -70,18 +70,18 @@ type EventStore() =
                 { state with Deleted = true }
         | None -> failwith ""
 
-    let optionStateFolder (state: Todo option) (event: EventRead<TodoData, int64>): Todo option =
-        Option.map (fun todo -> stateFolder todo event) state
+    let optionStateFolder (state: Todo option) (events: EventRead<TodoData, int64> list): Todo option =
+        match state with
+        | Some todo -> Some <| List.fold stateFolder todo events
+        | None -> None
 
     member _.GetTodo (id: Guid) =
         task {
             let! events = eventStore.GetEventsByCorrelationId id
 
-            let todo = List.fold optionStateFolder None events
-
-            return match todo with
-                    | Some todo -> Ok todo
-                    | None -> Error NotFound
+            return match events with
+                    | [] -> Error NotFound
+                    | _ -> Ok <| List.fold stateFolder defaultTodo events
         }
         |> Async.AwaitTask
 
