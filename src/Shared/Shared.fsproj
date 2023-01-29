@@ -6,5 +6,8 @@
   <ItemGroup>
     <Compile Include="Shared.fs" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Marten" Version="5.11.0" />
+  </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

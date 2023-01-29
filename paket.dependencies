@@ -5,7 +5,6 @@ storage: none
 nuget Fsharp.Core ~> 6
 nuget Fable.Remoting.Giraffe
 nuget LiteDB.FSharp
-nuget Marten
 nuget Saturn
 nuget Expecto
 

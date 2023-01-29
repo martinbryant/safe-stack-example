@@ -2,9 +2,7 @@ module EventStore
 
 open Marten
 open System
-open Marten.Events.Projections
 open Shared
-// open Weasel.Core
 
 type EventStorage() =
 
