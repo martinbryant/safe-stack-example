@@ -4,6 +4,7 @@ open Elmish
 open Elmish.Navigation
 open Fable.Remoting.Client
 open Shared
+open System
 
 type Model = { Todos: Todo list; Input: string }
 
@@ -12,7 +13,7 @@ type Msg =
     | SetInput of string
     | AddTodo
     | AddedTodo of Todo
-    | TodoClicked of int
+    | TodoClicked of Guid
 
 let todosApi =
     Remoting.createApi ()
@@ -36,7 +37,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         let cmd = Cmd.OfAsync.perform todosApi.addTodo todo AddedTodo
 
         { model with Input = "" }, cmd
-    | AddedTodo todo -> { model with Todos = model.Todos @ [ todo ] }, Cmd.none
+    | AddedTodo todo -> { model with Todos = (Seq.toList model.Todos) @ [ todo ] }, Cmd.none
     | TodoClicked id ->
         let url = "todo" + "/" + id.ToString()
         let cmd = Navigation.newUrl url

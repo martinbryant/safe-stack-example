@@ -4,18 +4,18 @@ open System
 open Marten.Events
 
 type CreatedData = {
-    Id: int
+    Id: Guid
     Description: string
 }
 
-type TodoEvent = 
+type TodoEvent =
     | TodoCreated of CreatedData
     | TodoCompleted
     | TodoDeleted
 
 [<CLIMutable>]
-type Todo = 
-    {   Id: int
+type Todo =
+    {   Id: Guid
         Description: string
         Created: DateTimeOffset
         Completed: bool
@@ -24,13 +24,12 @@ type Todo =
     member this.Apply(event: TodoEvent, meta: IEvent) : Todo =
         match event with
         | TodoCreated data ->
-            { 
+            {
                 Id = data.Id
                 Description = data.Description
                 Created = meta.Timestamp
                 Completed = false
-                Deleted = false
-            }
+                Deleted = false }
         | TodoCompleted ->
             { this with Completed = true }
         | TodoDeleted ->
@@ -41,7 +40,7 @@ module Todo =
         String.IsNullOrWhiteSpace description |> not
 
     let create (description: string) =
-        { Id = 0
+        { Id = Guid.NewGuid()
           Description = description
           Created = DateTimeOffset.UtcNow
           Completed = false
@@ -62,6 +61,6 @@ type AppError =
 type ITodosApi =
     { getTodos: unit -> Async<Todo list>
       addTodo: Todo -> Async<Todo>
-      getTodo: int -> Async<Result<Todo, AppError>>
-      removeTodo: int -> Async<unit>
-      completeTodo: int -> Async<Result<Todo, AppError>> }
+      getTodo: Guid -> Async<Result<Todo, AppError>>
+      removeTodo: Guid -> Async<unit>
+      completeTodo: Guid -> Async<Result<Todo, AppError>> }

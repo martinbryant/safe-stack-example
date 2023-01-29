@@ -1,10 +1,11 @@
 module Urls
 
 open Microsoft.FSharp.Reflection
+open System
 
 type Url =
     | TodoList
-    | Todo of int
+    | Todo of string
     | NotFound
 
     member this.asString =
