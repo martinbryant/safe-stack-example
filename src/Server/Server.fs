@@ -8,6 +8,7 @@ open Shared
 open LiteDB.FSharp
 open LiteDB
 open Shared
+open EventStore
 open System.IO
 
 type Storage() as storage =
@@ -70,15 +71,15 @@ type Storage() as storage =
 
 let todosApi =
     let storage = Storage()
+    let eventStore = EventStorage()
 
     { getTodos = fun () -> async { return storage.GetTodos() }
       addTodo =
         fun todo ->
             async {
-                return
-                    match storage.AddTodo todo with
-                    | Ok newTodo -> newTodo
-                    | Error e -> failwith e
+                let event = { Id = todo.Id; Description = todo.Description }
+                do eventStore.AddTodo event
+                return todo
             }
       getTodo = fun id ->
                     async {

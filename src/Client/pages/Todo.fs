@@ -1,12 +1,12 @@
 module Todo
 
+open System
 open Shared
 open Elmish
 open Elmish.Navigation
 open Feliz
 open Feliz.Bulma
 open Fable.Remoting.Client
-open System
 
 type WebData<'data, 'error> =
     | NotStarted
@@ -139,10 +139,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
     ]
 
 let todoInfo (todo: Todo) (dispatch: Msg -> unit) =
-    let createdDate =
-        match todo.Created with
-        | None -> "Created date unknown"
-        | Some date -> sprintf "Created on %s" (date.ToShortDateString())
+    let createdDate = sprintf "Created on %s" (todo.Created.ToString())
 
     Bulma.content [
         Bulma.label [
