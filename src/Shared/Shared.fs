@@ -18,8 +18,8 @@ type Todo =
     {   Id: Guid
         Description: string
         Created: DateTimeOffset
-        Completed: bool
-        Deleted: bool }
+        Completed: DateTimeOffset option
+        Deleted: DateTimeOffset option }
 
     member this.Apply(event: TodoEvent, meta: IEvent) : Todo =
         match event with
@@ -28,12 +28,12 @@ type Todo =
                 Id = data.Id
                 Description = data.Description
                 Created = meta.Timestamp
-                Completed = false
-                Deleted = false }
+                Completed = None
+                Deleted = None }
         | TodoCompleted ->
-            { this with Completed = true }
+            { this with Completed = Some meta.Timestamp }
         | TodoDeleted ->
-            { this with Deleted = true }
+            { this with Deleted = Some meta.Timestamp }
 
 module Todo =
     let isValid (description: string) =
@@ -43,11 +43,11 @@ module Todo =
         { Id = Guid.NewGuid()
           Description = description
           Created = DateTimeOffset.UtcNow
-          Completed = false
-          Deleted = false }
+          Completed = None
+          Deleted = None }
 
     let complete (todo: Todo) =
-        { todo with Completed = true }
+        { todo with Completed = None }
 
 module Route =
     let builder typeName methodName =

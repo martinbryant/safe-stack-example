@@ -123,7 +123,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
             Bulma.control.p [
                 Bulma.button.a [
                     color.isSuccess
-                    prop.disabled (todo.Completed || todo.Deleted)
+                    prop.disabled (todo.Completed.IsSome || todo.Deleted.IsSome)
                     prop.onClick (fun _ -> dispatch <| CompleteTodo todo.Id)
                     prop.text "Complete"
                 ]
@@ -131,7 +131,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
             Bulma.control.p [
                 Bulma.button.a [
                     color.isDanger
-                    prop.disabled todo.Deleted
+                    prop.disabled todo.Deleted.IsSome
                     prop.onClick (fun _ -> dispatch <| RequestRemove todo.Id)
                     prop.text "Delete"
                 ]
@@ -140,7 +140,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
     ]
 
 let todoInfo (todo: Todo) (dispatch: Msg -> unit) =
-    let createdDate = sprintf "Created on %s" (todo.Created.ToString())
+    let createdDate = sprintf "Created on %s" (todo.Created.ToString("d"))
 
     Bulma.content [
         Bulma.label [
