@@ -12,7 +12,7 @@ open LamarCodeGeneration
 type EventStorage() =
 
     let store = DocumentStore.For(fun options ->
-                    options.Connection("host=localhost;port=9501;database=todo_store;password=Monkey1234;username=postgres")
+                    options.Connection("host=host.docker.internal;port=9501;database=todo_store;password=Monkey1234;username=postgres")
 
                     options.GeneratedCodeMode <- TypeLoadMode.Auto
                     options.AutoCreateSchemaObjects <- AutoCreate.All
