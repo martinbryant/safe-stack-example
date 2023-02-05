@@ -15,7 +15,7 @@ let pageParser : Parser<Url->Url, Url> =
     [
       map Url.TodoList top
       map Url.TodoList (s Url.TodoList.asString)
-      map Url.Todo (s "todo" </> i32)
+      map Url.Todo (s "todo" </> str)
     ]
 
 let urlUpdate (result:Option<Url>) model =

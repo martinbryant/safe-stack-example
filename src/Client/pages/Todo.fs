@@ -1,12 +1,12 @@
 module Todo
 
+open System
 open Shared
 open Elmish
 open Elmish.Navigation
 open Feliz
 open Feliz.Bulma
 open Fable.Remoting.Client
-open System
 
 type WebData<'data, 'error> =
     | NotStarted
@@ -15,18 +15,18 @@ type WebData<'data, 'error> =
     | Errored of 'error
 
 type ConfirmationOpen =
-    | Open of int
+    | Open of Guid
     | Closed
 
 type Model = { Todo: WebData<Todo, AppError>; IsConfirmationOpen: ConfirmationOpen }
 
 type Msg =
     | GotTodo of Result<Todo, AppError>
-    | RemoveTodo of int
+    | RemoveTodo of Guid
     | RemovedTodo of unit
-    | CompleteTodo of int
+    | CompleteTodo of Guid
     | CompletedTodo of Result<Todo, AppError>
-    | RequestRemove of int
+    | RequestRemove of Guid
     | CancelRemoveRequest
 
 let todosApi =
@@ -34,7 +34,7 @@ let todosApi =
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<ITodosApi>
 
-let init (id: int) : Model * Cmd<Msg> =
+let init (id: Guid) : Model * Cmd<Msg> =
     let cmd = Cmd.OfAsync.perform todosApi.getTodo id GotTodo
     { Todo = Loading; IsConfirmationOpen = Closed }, cmd
 
@@ -82,7 +82,7 @@ let confirmationModal (model: Model) (dispatch: Msg -> unit) =
     let id =
         match model.IsConfirmationOpen with
         | Open id -> id
-        | Closed -> 0
+        | Closed -> Guid.Empty
 
     Bulma.modal [
         prop.id "modal"
@@ -123,7 +123,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
             Bulma.control.p [
                 Bulma.button.a [
                     color.isSuccess
-                    prop.disabled todo.Completed
+                    prop.disabled (todo.Completed || todo.Deleted)
                     prop.onClick (fun _ -> dispatch <| CompleteTodo todo.Id)
                     prop.text "Complete"
                 ]
@@ -131,6 +131,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
             Bulma.control.p [
                 Bulma.button.a [
                     color.isDanger
+                    prop.disabled todo.Deleted
                     prop.onClick (fun _ -> dispatch <| RequestRemove todo.Id)
                     prop.text "Delete"
                 ]
@@ -139,10 +140,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
     ]
 
 let todoInfo (todo: Todo) (dispatch: Msg -> unit) =
-    let createdDate =
-        match todo.Created with
-        | None -> "Created date unknown"
-        | Some date -> sprintf "Created on %s" (date.ToShortDateString())
+    let createdDate = sprintf "Created on %s" (todo.Created.ToString())
 
     Bulma.content [
         Bulma.label [

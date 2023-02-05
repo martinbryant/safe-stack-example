@@ -5,11 +5,15 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="EventStorage.fs" />
     <None Include="paket.references" />
     <Compile Include="Server.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Shared\Shared.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Marten" Version="5.11.0" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

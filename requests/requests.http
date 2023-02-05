@@ -1,0 +1,37 @@
+@host = http://localhost:5000/api
+
+POST {{host}}/ITodosApi/addTodo
+Content-Type: application/json
+Accept: application/json
+
+[{
+    "Id": "38affbfc-49e1-4a79-a12d-3f1df9a7942a",
+    "Description": "add",
+    "Created": "2010-04-01T23:59:59.999999-6:00",
+    "Completed": false,
+    "Deleted": false
+}]
+
+###
+
+GET {{host}}/ITodosApi/getTodos
+Content-Type: application/json
+Accept: application/json
+
+###
+
+POST {{host}}/ITodosApi/getTodo
+Content-Type: application/json
+Accept: application/json
+
+["38affbfc-49e1-4a79-a12d-3f1df9a7942a"]
+
+###
+
+POST {{host}}/ITodosApi/completeTodo
+Content-Type: application/json
+Accept: application/json
+
+["38affbfc-49e1-4a79-a12d-3f1df9a7942a"]
+
+###

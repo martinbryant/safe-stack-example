@@ -5,93 +5,38 @@ open Fable.Remoting.Giraffe
 open Saturn
 
 open Shared
-open LiteDB.FSharp
-open LiteDB
-open Shared
-open System.IO
-
-type Storage() as storage =
-    let current = Directory.GetCurrentDirectory()
-    let directory = Path.Join(current, "/data")
-    do
-        if(Directory.Exists(directory) = false) then
-            Directory.CreateDirectory(directory) |> ignore
-
-    let filename = Path.Join(directory, "/Todo.db")
-    let database =
-        let mapper = FSharpBsonMapper()
-        let connStr = sprintf "Filename=%s;mode=Exclusive" filename
-        new LiteDatabase (connStr, mapper)
-
-    let todos = database.GetCollection<Todo> "todos"
-
-    do
-        if storage.GetTodos() |> Seq.isEmpty then
-            storage.AddTodo(Todo.create "Create new SAFE project") |> ignore
-            storage.AddTodo(Todo.create "Write your app") |> ignore
-            storage.AddTodo(Todo.create "Ship it !!!") |> ignore
-
-    member _.GetTodos () =
-        todos.FindAll () |> List.ofSeq
-
-    member _.AddTodo (todo:Todo) =
-        if Todo.isValid todo.Description then
-            let id = (todos.Insert todo).AsInt32
-            let newTodo = { todo with Id = id }
-            Ok newTodo
-        else
-            Error "Invalid todo"
-
-    member _.GetTodo (id: int) =
-        let identifier = BsonValue(id)
-        let result = todos.FindById(identifier)
-        match box result with
-        | null -> Error <| NotFound
-        | _ -> Ok result
-
-    member _.CompleteTodo (id: int) =
-        let identifier = BsonValue(id)
-        let findResult = todos.FindById(identifier)
-        let result = match box findResult with
-                        | null -> Error <| NotFound
-                        | _ -> Ok findResult
-
-        Result.map Todo.complete result
-            |> Result.bind (fun todo ->
-                                if todos.Update todo
-                                    then
-                                        Ok todo
-                                    else
-                                        Error <| Request "Failed to update database")
-
-    member _.RemoveTodo (id: int) =
-        let identifier = BsonValue(id)
-        todos.Delete(identifier) |> ignore
+open EventStore
 
 let todosApi =
-    let storage = Storage()
+    let eventStore = EventStorage()
 
-    { getTodos = fun () -> async { return storage.GetTodos() }
+    { getTodos = fun () -> async {
+                            let! todos =  eventStore.GetTodos()
+                            return List.ofSeq todos}
       addTodo =
         fun todo ->
             async {
-                return
-                    match storage.AddTodo todo with
-                    | Ok newTodo -> newTodo
-                    | Error e -> failwith e
+                let event = { Id = todo.Id; Description = todo.Description }
+                do eventStore.AddTodo event
+                return todo
             }
       getTodo = fun id ->
                     async {
-                        return
-                            storage.GetTodo id
+                        let! todo = eventStore.GetTodo id
+
+                        return Ok todo
                     }
       removeTodo = fun id ->
                     async {
-                        do storage.RemoveTodo id
+                        return eventStore.RemoveTodo id
                     }
       completeTodo = fun id ->
                         async {
-                            return storage.CompleteTodo id
+                            do eventStore.CompleteTodo id
+
+                            let! todo = eventStore.GetTodo id
+
+                            return Ok todo
                         }}
 
 let webApp =
