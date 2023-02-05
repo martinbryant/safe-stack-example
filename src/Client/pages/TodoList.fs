@@ -50,7 +50,7 @@ open Feliz.Bulma
 let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo ) =
     let clickTodo = fun _ -> todo.Id |> TodoClicked |> dispatch
     let completeStyle =
-        if todo.Completed || todo.Deleted
+        if todo.Completed.IsSome || todo.Deleted.IsSome
             then
                 [ "strikethrough" ]
             else
