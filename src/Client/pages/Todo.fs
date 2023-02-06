@@ -162,6 +162,51 @@ let loadingView =
         ]
     ]
 
+let timeline =
+    Timeline.timeline [
+        timeline.isCentered
+        prop.children [
+            Timeline.header [
+                Bulma.tag [ color.isPrimary; tag.isMedium; prop.text "Start" ]
+            ]
+            Timeline.item [
+                Timeline.marker []
+                Timeline.content [
+                    Timeline.content.header "Feliz created"
+                    Timeline.content.content "A low of cool things can happen now"
+                ]
+            ]
+            Timeline.item [
+                Timeline.marker [
+                    marker.isImage
+                    image.is32x32
+                    prop.children [ Html.img [ prop.src "https://via.placeholder.com/32" ] ]
+                ]
+                Timeline.content [
+                    Timeline.content.header "Feliz.Bulma started"
+                    Timeline.content.content "Now we can do cool stuff with fancy styles"
+                ]
+            ]
+            Timeline.header [
+                Bulma.tag [ color.isPrimary; prop.text "2020" ]
+            ]
+            Timeline.item [
+                Timeline.marker [
+                    marker.isIcon
+                    prop.children [ Html.i [ prop.className "fas fa-flag" ] ]
+                ]
+                Timeline.content [
+                    Timeline.content.header "Fable 3 released"
+                    Timeline.content.content "What can be better than .NET tool compiling F# to JS?"
+                ]
+            ]
+            Timeline.header [
+                Bulma.tag [ color.isPrimary; tag.isMedium; prop.text "End" ]
+            ]
+
+        ]
+    ]
+
 let views (model: Model) (dispatch: Msg -> unit) =
     match model.Todo with
     | Loading | NotStarted -> loadingView
@@ -184,6 +229,14 @@ let view (model: Model) (dispatch: Msg -> unit) =
                     ]
                     Bulma.box [
                         views model dispatch
+                    ]
+                ]
+            ]
+            Bulma.column [
+                column.is12
+                prop.children [
+                    Bulma.box [
+                        timeline
                     ]
                 ]
             ]
