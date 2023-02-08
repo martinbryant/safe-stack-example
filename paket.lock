@@ -143,6 +143,8 @@ NUGET
       FSharp.Core (>= 4.7.2)
     FParsec (1.1.1)
       FSharp.Core (>= 4.3.4)
+    FSharp.Configuration (2.0)
+      FSharp.Core (>= 4.7)
     FSharp.Control.Reactive (5.0.2)
       FSharp.Core (>= 4.7.2)
       System.Reactive (>= 5.0)

@@ -9,10 +9,10 @@ open System.Text.Json.Serialization
 open Marten.Services
 open LamarCodeGeneration
 
-type EventStorage() =
+type EventStorage(connection: string) =
 
     let store = DocumentStore.For(fun options ->
-                    options.Connection("host=safe-db;port=5432;database=todo_store;password=Monkey1234;username=postgres")
+                    options.Connection(connection)
 
                     options.GeneratedCodeMode <- TypeLoadMode.Auto
                     options.AutoCreateSchemaObjects <- AutoCreate.All
