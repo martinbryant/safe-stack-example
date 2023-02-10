@@ -1,14 +1,20 @@
 module Server
 
+open System
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
 open Saturn
+open FSharp.Configuration
 
 open Shared
 open EventStore
 
+type Settings = YamlConfig<"Config.yaml">
+
 let todosApi =
-    let eventStore = EventStorage()
+    let config = Settings()
+    let connection = config.DB.Connection
+    let eventStore = EventStorage(connection)
 
     { getTodos = fun () -> async {
                             let! todos =  eventStore.GetTodos()
