@@ -1,2 +1,2 @@
 DB:
-    Connection: host=safe-db;port=5432;database=todo_store;password=Monkey1234;username=postgres;
+    Connection: host=localhost;port=9501;database=todo_store;password=Monkey1234;username=postgres;

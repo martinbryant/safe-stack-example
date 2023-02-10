@@ -24,7 +24,7 @@ const CONFIG = {
             ws: true
         }
     },
-    cssEntry: './src/Client/style.css',
+    cssEntry: './src/Client/style.scss',
 
 };
 
