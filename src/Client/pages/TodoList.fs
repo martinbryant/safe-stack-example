@@ -6,7 +6,8 @@ open Fable.Remoting.Client
 open Shared
 open System
 
-type Model = { Todos: Todo list; Input: string }
+
+type Model = { Todos: Todo list; Input: string; ShowDeleted: bool }
 
 type Msg =
     | GotTodos of Todo list
@@ -14,6 +15,7 @@ type Msg =
     | AddTodo
     | AddedTodo of Todo
     | TodoClicked of Guid
+    | ToggleShowDeleted
 
 let todosApi =
     Remoting.createApi ()
@@ -21,7 +23,7 @@ let todosApi =
     |> Remoting.buildProxy<ITodosApi>
 
 let init () : Model * Cmd<Msg> =
-    let model = { Todos = []; Input = "" }
+    let model = { Todos = []; Input = ""; ShowDeleted = false }
 
     let cmd = Cmd.OfAsync.perform todosApi.getTodos () GotTodos
 
@@ -42,6 +44,8 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         let url = "todo" + "/" + id.ToString()
         let cmd = Navigation.newUrl url
         model, cmd
+    | ToggleShowDeleted ->
+        { model with ShowDeleted = not model.ShowDeleted }, Cmd.none
 
 
 open Feliz
@@ -67,7 +71,9 @@ let containerBox (model: Model) (dispatch: Msg -> unit) =
     let todoItem = todoItem model dispatch
     Bulma.box [
         Bulma.content [
-            Html.ol (List.map todoItem model.Todos)
+            Html.ol (model.Todos
+                     |> List.filter (fun todo -> todo.Deleted.IsNone || model.ShowDeleted)
+                     |> List.map todoItem)
         ]
         Bulma.field.div [
             field.isGrouped
@@ -89,6 +95,20 @@ let containerBox (model: Model) (dispatch: Msg -> unit) =
                         prop.onClick (fun _ -> dispatch AddTodo)
                         prop.text "Add"
                     ]
+                ]
+            ]
+        ]
+        Bulma.field.div [
+            prop.children [
+                Switch.checkbox [
+                        prop.id "deleted-toggle"
+                        color.isSuccess
+                        switch.isRounded
+                        prop.onClick (fun _ -> dispatch ToggleShowDeleted)
+                    ]
+                Html.label [
+                    prop.htmlFor "deleted-toggle"
+                    prop.text " Show deleted?"
                 ]
             ]
         ]

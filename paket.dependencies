@@ -2,6 +2,7 @@ source https://api.nuget.org/v3/index.json
 framework: net6.0
 storage: none
 
+nuget Feliz.Bulma.Switch
 nuget FSharp.Configuration
 nuget Fsharp.Core ~> 6
 nuget Fable.Remoting.Giraffe
