@@ -16,5 +16,8 @@
   <ItemGroup>
     <PackageReference Include="Marten" Version="5.11.0" />
   </ItemGroup>
+    <ItemGroup>
+        <None Include="Config.yaml" CopyToPublishDirectory="Always" />
+    </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

@@ -13,13 +13,7 @@ type Settings = YamlConfig<"Config.yaml">
 
 let todosApi =
     let config = Settings()
-
-    let isProduction = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") = "Production";
-
-    let connection = match isProduction with
-                        | true -> config.DB.Connection
-                        | false -> config.DB.TestConnection
-
+    let connection = config.DB.Connection
     let eventStore = EventStorage(connection)
 
     { getTodos = fun () -> async {
