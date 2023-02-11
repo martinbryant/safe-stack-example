@@ -53,18 +53,25 @@ open Feliz.Bulma
 
 let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo ) =
     let clickTodo = fun _ -> todo.Id |> TodoClicked |> dispatch
-    let completeStyle =
+    let strikethrough =
         if todo.Completed.IsSome || todo.Deleted.IsSome
             then
-                [ "strikethrough" ]
+                [ style.textDecoration.lineThrough ]
+            else
+                []
+
+    let deletedColour =
+        if todo.Deleted.IsSome
+            then
+                [ color.hasTextDanger ]
             else
                 []
 
     Html.li [
-        Html.a [
-            prop.classes completeStyle
+        Html.a ([
             prop.onClick clickTodo
-            prop.text todo.Description ]
+            prop.text todo.Description
+            prop.style strikethrough ] @ deletedColour)
         ]
 
 let containerBox (model: Model) (dispatch: Msg -> unit) =
