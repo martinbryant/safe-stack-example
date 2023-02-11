@@ -3,6 +3,7 @@ framework: net6.0
 storage: none
 
 nuget Feliz.Bulma.Switch
+nuget Feliz.Bulma.Timeline
 nuget FSharp.Configuration
 nuget Fsharp.Core ~> 6
 nuget Fable.Remoting.Giraffe
