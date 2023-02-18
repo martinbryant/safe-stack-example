@@ -111,14 +111,14 @@ let confirmationModal (model: Model) (dispatch: Msg -> unit) =
                         field.isGrouped
                         prop.children [
                             Bulma.control.p [
-                                Bulma.button.a [
+                                Bulma.button.button [
                                     color.isDanger
                                     prop.onClick (fun _ -> dispatch <| RemoveTodo id)
                                     prop.text "Confirm"
                                 ]
                             ]
                             Bulma.control.p [
-                                Bulma.button.a [
+                                Bulma.button.button [
                                     color.isLight
                                     prop.onClick (fun _ -> dispatch <| CancelRemoveRequest)
                                     prop.text "Cancel"
@@ -136,7 +136,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
         field.isGrouped
         prop.children [
             Bulma.control.p [
-                Bulma.button.a [
+                Bulma.button.button [
                     color.isSuccess
                     prop.disabled (todo.Completed.IsSome || todo.Deleted.IsSome)
                     prop.onClick (fun _ -> dispatch <| CompleteTodo todo.Id)
@@ -144,7 +144,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
                 ]
             ]
             Bulma.control.p [
-                Bulma.button.a [
+                Bulma.button.button [
                     color.isDanger
                     prop.disabled todo.Deleted.IsSome
                     prop.onClick (fun _ -> dispatch <| RequestRemove todo.Id)
