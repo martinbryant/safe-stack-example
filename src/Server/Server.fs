@@ -32,6 +32,12 @@ let todosApi =
 
                         return Ok todo
                     }
+      getHistory =
+          fun id ->
+              async {
+                  let! history = eventStore.GetHistory id
+                  return history.Items
+              }
       removeTodo = fun id ->
                     async {
                         return eventStore.RemoveTodo id

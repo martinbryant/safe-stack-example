@@ -2,7 +2,9 @@ source https://api.nuget.org/v3/index.json
 framework: net6.0
 storage: none
 
+nuget Fable.DateFunctions
 nuget Feliz.Bulma.Switch
+nuget Feliz.Bulma.Timeline
 nuget FSharp.Configuration
 nuget Fsharp.Core ~> 6
 nuget Fable.Remoting.Giraffe

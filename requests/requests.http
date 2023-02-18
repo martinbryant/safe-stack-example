@@ -28,6 +28,14 @@ Accept: application/json
 
 ###
 
+POST {{host}}/ITodosApi/getHistory
+Content-Type: application/json
+Accept: application/json
+
+["706c732b-a033-426f-b66c-8e1f038d1048"]
+
+###
+
 POST {{host}}/ITodosApi/completeTodo
 Content-Type: application/json
 Accept: application/json
