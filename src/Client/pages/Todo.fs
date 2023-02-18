@@ -155,7 +155,7 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
     ]
 
 let formatDate (date: DateTimeOffset) =
-    date.Format("EEEE, do MMMM y 'at' HH:MM")
+    date.Format("EEEE, do MMMM y 'at' H:mm")
 
 let createdSection event =
     Timeline.item [
@@ -198,8 +198,8 @@ let deletedSection historyItem =
 
 let timelineHeader =
     Timeline.header [
-            Bulma.tag [ color.isPrimary; tag.isMedium; prop.text "History" ]
-        ]
+        Bulma.tag [ color.isPrimary; tag.isMedium; prop.text "History" ]
+    ]
 let eventReducer state history =
     match history.Event with
     | TodoCreated _ -> state @ [createdSection history]
