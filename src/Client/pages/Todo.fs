@@ -7,6 +7,8 @@ open Elmish.Navigation
 open Feliz
 open Feliz.Bulma
 open Fable.Remoting.Client
+open Fable.DateFunctions
+
 
 type WebData<'data, 'error> =
     | NotStarted
@@ -18,10 +20,11 @@ type ConfirmationOpen =
     | Open of Guid
     | Closed
 
-type Model = { Todo: WebData<Todo, AppError>; IsConfirmationOpen: ConfirmationOpen }
+type Model = { Todo: WebData<Todo, AppError>; IsConfirmationOpen: ConfirmationOpen; History: TodoHistoryItem list }
 
 type Msg =
     | GotTodo of Result<Todo, AppError>
+    | GotHistory of TodoHistoryItem list
     | RemoveTodo of Guid
     | RemovedTodo of unit
     | CompleteTodo of Guid
@@ -34,9 +37,12 @@ let todosApi =
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<ITodosApi>
 
+let getHistory id =
+    Cmd.OfAsync.perform todosApi.getHistory id GotHistory
+
 let init (id: Guid) : Model * Cmd<Msg> =
     let cmd = Cmd.OfAsync.perform todosApi.getTodo id GotTodo
-    { Todo = Loading; IsConfirmationOpen = Closed }, cmd
+    { Todo = Loading; IsConfirmationOpen = Closed; History = [] }, cmd
 
 let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
@@ -44,7 +50,16 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         let newModel = match result with
                         | Ok todo -> Loaded todo
                         | Error error -> Errored error
-        { model with Todo = newModel}, Cmd.none
+
+        let cmd = match result with
+                    | Ok todo ->
+                        getHistory todo.Id
+                    | Error _ -> Cmd.none
+
+        { model with Todo = newModel}, cmd
+    | GotHistory history ->
+        { model with History = history }, Cmd.none
+
     | RemoveTodo id ->
         let cmd = Cmd.OfAsync.perform todosApi.removeTodo id RemovedTodo
 
@@ -63,7 +78,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 
     | CompletedTodo result ->
         match result with
-        | Ok todo -> { model with Todo = Loaded todo }, Cmd.none
+        | Ok todo -> { model with Todo = Loaded todo }, getHistory todo.Id
         | Error error -> match error with
                             | NotFound -> model, Navigation.newUrl "/"
                             | _ -> { model with Todo = Errored error }, Cmd.none
@@ -139,8 +154,64 @@ let todoControls (todo: Todo) (dispatch: Msg -> unit) =
         ]
     ]
 
+let formatDate (date: DateTimeOffset) =
+    date.Format("EEEE, do MMMM y 'at' HH:MM")
+
+let createdSection event =
+    Timeline.item [
+        Timeline.marker [
+            marker.isIcon
+            color.isInfo
+            prop.children [ Html.i [ prop.className "fas fa-plus" ] ]
+        ]
+        Timeline.content [
+            Timeline.content.header <| TodoEvent.toString event.Event
+            Timeline.content.content (formatDate event.At)
+        ]
+    ]
+
+let completeSection event =
+    Timeline.item [
+        Timeline.marker [
+            marker.isIcon
+            color.isPrimary
+            prop.children [ Html.i [ prop.className "fas fa-check" ] ]
+        ]
+        Timeline.content [
+            Timeline.content.header <| TodoEvent.toString event.Event
+            Timeline.content.content (formatDate event.At)
+        ]
+    ]
+
+let deletedSection historyItem =
+    Timeline.item [
+        Timeline.marker [
+            marker.isIcon
+            color.isDanger
+            prop.children [ Html.i [ prop.className "fas fa-trash" ] ]
+        ]
+        Timeline.content [
+            Timeline.content.header <| TodoEvent.toString historyItem.Event
+            Timeline.content.content (formatDate historyItem.At)
+        ]
+    ]
+
+let timelineHeader =
+    Timeline.header [
+            Bulma.tag [ color.isPrimary; tag.isMedium; prop.text "History" ]
+        ]
+let eventReducer state history =
+    match history.Event with
+    | TodoCreated _ -> state @ [createdSection history]
+    | TodoCompleted -> state @ [completeSection history]
+    | TodoDeleted -> state @ [deletedSection history]
+
+let timeline (events: TodoHistoryItem list) =
+    Timeline.timeline (events |> List.fold eventReducer [timelineHeader] )
+
+
 let todoInfo (todo: Todo) (dispatch: Msg -> unit) =
-    let createdDate = sprintf "Created on %s" (todo.Created.ToString("d"))
+    let createdDate = $"Created on %s{formatDate todo.Created}"
 
     Bulma.content [
         Bulma.label [
@@ -184,6 +255,9 @@ let view (model: Model) (dispatch: Msg -> unit) =
                     ]
                     Bulma.box [
                         views model dispatch
+                    ]
+                    Bulma.box [
+                        timeline model.History
                     ]
                 ]
             ]

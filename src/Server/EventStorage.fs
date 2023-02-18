@@ -19,6 +19,8 @@ type EventStorage(connection: string) =
 
                     options.Projections.SelfAggregate<Todo> (ProjectionLifecycle.Inline)
                     |> ignore
+                    options.Projections.SelfAggregate<TodoHistory> (ProjectionLifecycle.Live)
+                    |> ignore
 
                     let serializer = SystemTextJsonSerializer ()
                     serializer.Customize (fun v -> v.Converters.Add (JsonFSharpConverter ()))
@@ -57,7 +59,7 @@ type EventStorage(connection: string) =
 
     member _.GetTodo(id: Guid) =
         task {
-            use! session = store.OpenSessionAsync(new SessionOptions())
+            use! session = store.OpenSessionAsync(SessionOptions())
 
             return! session.Query<Todo>()
                             .FirstOrDefaultAsync(fun todo -> todo.Id = id)
@@ -65,7 +67,16 @@ type EventStorage(connection: string) =
 
     member _.GetTodos() =
         task {
-            use! session = store.OpenSessionAsync(new SessionOptions())
+            use! session = store.OpenSessionAsync(SessionOptions())
 
             return! session.Query<Todo>().ToListAsync()
+        } |> Async.AwaitTask
+
+    member _.GetHistory(id: Guid) =
+        task {
+            use session = store.OpenSession(SessionOptions())
+
+            let events = session.Events.AggregateStream<TodoHistory> id
+
+            return events
         } |> Async.AwaitTask
