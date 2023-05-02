@@ -8,7 +8,7 @@
     <Compile Include="EventStorage.fs" />
     <None Include="paket.references" />
     <Compile Include="Server.fs" />
-    <Content Include="Config.yaml" />
+    <Content Include="Config.yaml" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Shared\Shared.fsproj" />
@@ -16,8 +16,5 @@
   <ItemGroup>
     <PackageReference Include="Marten" Version="5.11.0" />
   </ItemGroup>
-    <ItemGroup>
-        <None Include="Config.yaml" CopyToPublishDirectory="Always" />
-    </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
