@@ -6,8 +6,6 @@ open Fable.Remoting.Giraffe
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Configuration
 open Saturn
-open FSharp.Configuration
-
 open Shared
 open EventStore
 
