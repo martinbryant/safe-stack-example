@@ -1,10 +1,10 @@
 module TodoList
 
 open Elmish
-open Elmish.Navigation
 open Fable.Remoting.Client
 open Shared
 open System
+open Feliz.Router
 
 
 type Model = { Todos: Todo list; Input: string; ShowDeleted: bool }
@@ -42,7 +42,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | AddedTodo todo -> { model with Todos = (Seq.toList model.Todos) @ [ todo ] }, Cmd.none
     | TodoClicked id ->
         let url = "todo" + "/" + id.ToString()
-        let cmd = Navigation.newUrl url
+        let cmd = Cmd.navigate url
         model, cmd
     | ToggleShowDeleted ->
         { model with ShowDeleted = not model.ShowDeleted }, Cmd.none

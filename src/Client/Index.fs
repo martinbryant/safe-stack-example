@@ -1,10 +1,10 @@
 module Index
 
 open Elmish
-open Urls
 open Feliz
 open Feliz.Bulma
 open System
+open Feliz.Router
 
 type Page =
     | TodoList of TodoList.Model
@@ -17,21 +17,21 @@ type Model =
 type Msg =
     | TodoListMsg of TodoList.Msg
     | TodoMsg of Todo.Msg
+    | UrlChanged of string list
 
 let initFromUrl url =
     match url with
-    | Url.TodoList ->
+    | [ "" ] ->
         let model, cmd = TodoList.init ()
         { CurrentPage = TodoList model }, Cmd.map TodoListMsg cmd
-    | Url.Todo id ->
+    | [ "todo"; id ] ->
         let model, cmd = Todo.init (Guid.Parse id)
         { CurrentPage = Todo model }, Cmd.map TodoMsg cmd
-    | Url.NotFound -> { CurrentPage = NotFound }, Cmd.none
-
-let init (url: Url option): Model * Cmd<Msg> =
-    match url with
-    | Some url -> initFromUrl url
     | _ -> { CurrentPage = NotFound }, Cmd.none
+
+let init () =
+    Router.currentUrl ()
+    |> initFromUrl
 
 
 let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
@@ -47,6 +47,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         let nextState = { model with CurrentPage = Todo todoModel }
         let nextCmd = Cmd.map TodoMsg todoCmd
         nextState, nextCmd
+    | _, UrlChanged url -> initFromUrl url
     | NotFound, _ | _, _ ->
         model, Cmd.none
 
@@ -74,22 +75,27 @@ let navBrand =
     ]
 
 let view (model: Model) (dispatch: Msg -> unit) =
-    Bulma.hero [
-        hero.isFullHeight
-        color.isPrimary
-        prop.style [
-            style.backgroundSize "cover"
-            style.backgroundImageUrl "https://unsplash.it/1200/900?random"
-            style.backgroundPosition "no-repeat center center fixed"
-        ]
-        prop.children [
-            Bulma.heroHead [
-                Bulma.navbar [
-                    Bulma.container [ navBrand ]
+    React.router [
+        router.onUrlChanged (UrlChanged >> dispatch)
+        router.children [
+            Bulma.hero [
+                hero.isFullHeight
+                color.isPrimary
+                prop.style [
+                    style.backgroundSize "cover"
+                    style.backgroundImageUrl "https://unsplash.it/1200/900?random"
+                    style.backgroundPosition "no-repeat center center fixed"
                 ]
-            ]
-            Bulma.heroBody [
-                viewPage model dispatch
+                prop.children [
+                    Bulma.heroHead [
+                        Bulma.navbar [
+                            Bulma.container [ navBrand ]
+                        ]
+                    ]
+                    Bulma.heroBody [
+                        viewPage model dispatch
+                    ]
+                ]
             ]
         ]
     ]

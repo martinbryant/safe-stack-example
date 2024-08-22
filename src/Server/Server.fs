@@ -3,27 +3,29 @@ module Server
 open System
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
+open Microsoft.AspNetCore.Http
+open Microsoft.Extensions.Configuration
 open Saturn
 open FSharp.Configuration
 
 open Shared
 open EventStore
 
-type Settings = YamlConfig<"Config.yaml">
-
-let todosApi =
-    let config = Settings()
-    let connection = config.DB.Connection
+let todosApi (context: HttpContext) =
+    let config = context.GetService<IConfiguration>()
+    let connection = config.GetConnectionString "Db"
     let eventStore = EventStorage(connection)
 
-    { getTodos = fun () -> async {
-                            let! todos =  eventStore.GetTodos()
-                            return List.ofSeq todos}
+    { getTodos = fun () ->
+        async {
+            let! todos =  eventStore.GetTodos()
+            return List.ofSeq todos
+        }
       addTodo =
         fun todo ->
             async {
                 let event = { Id = todo.Id; Description = todo.Description }
-                do eventStore.AddTodo event
+                do! eventStore.AddTodo event
                 return todo
             }
       getTodo = fun id ->
@@ -38,23 +40,20 @@ let todosApi =
                   let! history = eventStore.GetHistory id
                   return history.Items
               }
-      removeTodo = fun id ->
-                    async {
-                        return eventStore.RemoveTodo id
-                    }
+      removeTodo = eventStore.RemoveTodo
       completeTodo = fun id ->
-                        async {
-                            do eventStore.CompleteTodo id
+        async {
+            do! eventStore.CompleteTodo id
 
-                            let! todo = eventStore.GetTodo id
+            let! todo = eventStore.GetTodo id
 
-                            return Ok todo
-                        }}
+            return Ok todo
+        }}
 
 let webApp =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.fromValue todosApi
+    |> Remoting.fromContext todosApi
     |> Remoting.buildHttpHandler
 
 let app =

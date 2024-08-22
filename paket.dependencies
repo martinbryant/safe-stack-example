@@ -1,15 +1,16 @@
 source https://api.nuget.org/v3/index.json
-framework: net6.0
+framework: net8.0
 storage: none
 
 nuget Fable.DateFunctions
 nuget Feliz.Bulma.Switch
 nuget Feliz.Bulma.Timeline
+nuget Feliz.Router
 nuget FSharp.Configuration
-nuget Fsharp.Core ~> 6
+nuget Fsharp.Core
 nuget Fable.Remoting.Giraffe
 nuget FSharp.SystemTextJson
-nuget LiteDB.FSharp
+nuget Marten ~> 6
 nuget Saturn
 nuget Expecto
 

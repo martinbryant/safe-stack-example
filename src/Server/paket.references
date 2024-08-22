@@ -1,6 +1,6 @@
 Saturn
 Fable.Remoting.Giraffe
 Fsharp.Core
-LiteDB.FSharp
 FSharp.SystemTextJson
 FSharp.Configuration
+Marten

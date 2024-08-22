@@ -9,7 +9,7 @@ type Url =
     | NotFound
 
     member this.asString =
-        let (case, _) =
+        let case, _ =
             FSharpValue.GetUnionFields(this, typeof<Url>)
 
         case.Name.ToLower()

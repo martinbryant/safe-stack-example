@@ -3,9 +3,9 @@ module Todo
 open System
 open Shared
 open Elmish
-open Elmish.Navigation
 open Feliz
 open Feliz.Bulma
+open Feliz.Router
 open Fable.Remoting.Client
 open Fable.DateFunctions
 
@@ -66,7 +66,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         model, cmd
 
     | RemovedTodo _ ->
-        let cmd = Navigation.newUrl "/"
+        let cmd = Cmd.navigate "/"
 
         model, cmd
 
@@ -80,7 +80,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         match result with
         | Ok todo -> { model with Todo = Loaded todo }, getHistory todo.Id
         | Error error -> match error with
-                            | NotFound -> model, Navigation.newUrl "/"
+                            | NotFound -> model, Cmd.navigate "/"
                             | _ -> { model with Todo = Errored error }, Cmd.none
 
     | RequestRemove id ->

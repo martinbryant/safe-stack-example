@@ -2,6 +2,7 @@ namespace Shared
 
 open System
 open Marten.Events
+open Marten.Events.Projections
 
 type CreatedData = {
     Id: Guid
