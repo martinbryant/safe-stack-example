@@ -70,7 +70,6 @@ let configureServices (services: IServiceCollection) =
 
         options.Connection(config.GetConnectionString "Db")
 
-        options.GeneratedCodeMode <- TypeLoadMode.Auto
         options.AutoCreateSchemaObjects <- AutoCreate.All
 
         options.Projections.Snapshot<Todo> SnapshotLifecycle.Inline |> ignore
