@@ -5,7 +5,7 @@ open Farmer.Builders
 
 open Helpers
 
-initializeContext()
+initializeContext ()
 
 let sharedPath = Path.getFullName "src/Shared"
 let serverPath = Path.getFullName "src/Server"
@@ -17,16 +17,21 @@ let clientTestsPath = Path.getFullName "tests/Client"
 
 Target.create "Clean" (fun _ ->
     Shell.cleanDir deployPath
-    run dotnet "fable clean --yes" clientPath // Delete *.fs.js files created by Fable
+    run dotnet [ "fable"; "clean"; "--yes" ] clientPath // Delete *.fs.js files created by Fable
 )
 
-Target.create "InstallClient" (fun _ -> run npm "install" ".")
+Target.create "RestoreClientDependencies" (fun _ -> run npm [ "ci" ] ".")
 
 Target.create "Bundle" (fun _ ->
-    [ "server", dotnet $"publish -c Release -o \"{deployPath}\"" serverPath
-      "client", dotnet "fable -o output -s --run npm run build" clientPath ]
-    |> runParallel
-)
+    [
+        "server",
+        dotnet [ "publish"; "-c"; "Release"; "-o"; deployPath ] serverPath
+        "client",
+        dotnet
+            [ "fable"; "-o"; "output"; "-s"; "--run"; "npx"; "vite"; "build" ]
+            clientPath
+    ]
+    |> runParallel)
 
 Target.create "Azure" (fun _ ->
     let web = webApp {
@@ -35,6 +40,7 @@ Target.create "Azure" (fun _ ->
         runtime_stack Runtime.DotNet60
         zip_deploy "deploy"
     }
+
     let deployment = arm {
         location Location.WestEurope
         add_resource web
@@ -42,41 +48,34 @@ Target.create "Azure" (fun _ ->
 
     deployment
     |> Deploy.execute "safe_stack_example" Deploy.NoParameters
-    |> ignore
-)
+    |> ignore)
 
 Target.create "Run" (fun _ ->
-    run dotnet "build" sharedPath
-    [ "server", dotnet "watch run" serverPath
-      "client", dotnet "fable watch -o output -s --run npm run start" clientPath ]
-    |> runParallel
-)
+    run dotnet [ "build" ] sharedPath
 
-Target.create "RunTests" (fun _ ->
-    run dotnet "build" sharedTestsPath
-    [ "server", dotnet "watch run" serverTestsPath
-      "client", dotnet "fable watch -o output -s --run npm run test:live" clientTestsPath ]
-    |> runParallel
-)
+    [
+        "server", dotnet [ "watch"; "run" ] serverPath
+        "client",
+        dotnet
+            [ "fable"; "watch"; "-o"; "output"; "-s"; "--run"; "npx"; "vite" ]
+            clientPath
+    ]
+    |> runParallel)
 
-Target.create "Format" (fun _ ->
-    run dotnet "fantomas . -r" "src"
-)
+// Target.create "RunTests" (fun _ ->
+//     run dotnet "build" sharedTestsPath
+//
+//     [ "server", dotnet "watch run" serverTestsPath
+//       "client", dotnet "fable watch -o output -s --run npm run test:live" clientTestsPath ]
+//     |> runParallel)
+//
+// Target.create "Format" (fun _ -> run dotnet "fantomas . -r" "src")
 
 open Fake.Core.TargetOperators
 
 let dependencies = [
-    "Clean"
-        ==> "InstallClient"
-        ==> "Bundle"
-        ==> "Azure"
+    "Clean" ==> "RestoreClientDependencies" ==> "Run"
 
-    "Clean"
-        ==> "InstallClient"
-        ==> "Run"
-
-    "InstallClient"
-        ==> "RunTests"
 ]
 
 [<EntryPoint>]
