@@ -24,25 +24,27 @@ Target.create "RestoreClientDependencies" (fun _ -> run npm [ "ci" ] ".")
 
 Target.create "Bundle" (fun _ ->
     [
-        "server", dotnet [ "publish"; "-c"; "Release"; "-o"; deployPath ] serverPath
-        "client", dotnet [ "fable"; "-o"; "output"; "-s"; "--run"; "npx"; "vite"; "build" ] clientPath
+        "server",
+        dotnet [ "publish"; "-c"; "Release"; "-o"; deployPath ] serverPath
+        "client",
+        dotnet
+            [ "fable"; "-o"; "output"; "-s"; "--run"; "npx"; "vite"; "build" ]
+            clientPath
     ]
     |> runParallel)
 
 Target.create "Azure" (fun _ ->
-    let web =
-        webApp {
-            name "safe_stack_example"
-            operating_system OS.Windows
-            runtime_stack Runtime.DotNet60
-            zip_deploy "deploy"
-        }
+    let web = webApp {
+        name "safe_stack_example"
+        operating_system OS.Windows
+        runtime_stack Runtime.DotNet60
+        zip_deploy "deploy"
+    }
 
-    let deployment =
-        arm {
-            location Location.WestEurope
-            add_resource web
-        }
+    let deployment = arm {
+        location Location.WestEurope
+        add_resource web
+    }
 
     deployment
     |> Deploy.execute "safe_stack_example" Deploy.NoParameters
@@ -53,7 +55,10 @@ Target.create "Run" (fun _ ->
 
     [
         "server", dotnet [ "watch"; "run" ] serverPath
-        "client", dotnet [ "fable"; "watch"; "-o"; "output"; "-s"; "--run"; "npx"; "vite" ] clientPath
+        "client",
+        dotnet
+            [ "fable"; "watch"; "-o"; "output"; "-s"; "--run"; "npx"; "vite" ]
+            clientPath
     ]
     |> runParallel)
 
@@ -68,11 +73,10 @@ Target.create "Run" (fun _ ->
 
 open Fake.Core.TargetOperators
 
-let dependencies =
-    [
-      "Clean" ==> "RestoreClientDependencies" ==> "Run"
+let dependencies = [
+    "Clean" ==> "RestoreClientDependencies" ==> "Run"
 
-       ]
+]
 
 [<EntryPoint>]
 let main args = runOrDefault args

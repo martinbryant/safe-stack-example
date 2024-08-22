@@ -7,7 +7,11 @@ open System
 open Feliz.Router
 
 
-type Model = { Todos: Todo list; Input: string; ShowDeleted: bool }
+type Model = {
+    Todos: Todo list
+    Input: string
+    ShowDeleted: bool
+}
 
 type Msg =
     | GotTodos of Todo list
@@ -23,7 +27,11 @@ let todosApi =
     |> Remoting.buildProxy<ITodosApi>
 
 let init () : Model * Cmd<Msg> =
-    let model = { Todos = []; Input = ""; ShowDeleted = false }
+    let model = {
+        Todos = []
+        Input = ""
+        ShowDeleted = false
+    }
 
     let cmd = Cmd.OfAsync.perform todosApi.getTodos () GotTodos
 
@@ -39,48 +47,61 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         let cmd = Cmd.OfAsync.perform todosApi.addTodo todo AddedTodo
 
         { model with Input = "" }, cmd
-    | AddedTodo todo -> { model with Todos = (Seq.toList model.Todos) @ [ todo ] }, Cmd.none
+    | AddedTodo todo ->
+        {
+            model with
+                Todos = (Seq.toList model.Todos) @ [ todo ]
+        },
+        Cmd.none
     | TodoClicked id ->
-        let url = "todo" + "/" + id.ToString()
+        let url = Router.formatPath ("todo", id.ToString())
         let cmd = Cmd.navigate url
         model, cmd
     | ToggleShowDeleted ->
-        { model with ShowDeleted = not model.ShowDeleted }, Cmd.none
+        {
+            model with
+                ShowDeleted = not model.ShowDeleted
+        },
+        Cmd.none
 
 
 open Feliz
 open Feliz.Bulma
 
-let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo ) =
+let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo) =
     let clickTodo = fun _ -> todo.Id |> TodoClicked |> dispatch
+
     let strikethrough =
-        if todo.Completed.IsSome || todo.Deleted.IsSome
-            then
-                [ style.textDecoration.lineThrough ]
-            else
-                []
+        if todo.Completed.IsSome || todo.Deleted.IsSome then
+            [ style.textDecoration.lineThrough ]
+        else
+            []
 
     let deletedColour =
-        if todo.Deleted.IsSome
-            then
-                [ color.hasTextDanger ]
-            else
-                []
+        if todo.Deleted.IsSome then [ color.hasTextDanger ] else []
 
     Html.li [
-        Html.a ([
-            prop.onClick clickTodo
-            prop.text todo.Description
-            prop.style strikethrough ] @ deletedColour)
-        ]
+        Html.a (
+            [
+                prop.onClick clickTodo
+                prop.text todo.Description
+                prop.style strikethrough
+            ]
+            @ deletedColour
+        )
+    ]
 
 let containerBox (model: Model) (dispatch: Msg -> unit) =
     let todoItem = todoItem model dispatch
+
     Bulma.box [
         Bulma.content [
-            Html.ol (model.Todos
-                     |> List.filter (fun todo -> todo.Deleted.IsNone || model.ShowDeleted)
-                     |> List.map todoItem)
+            Html.ol (
+                model.Todos
+                |> List.filter (fun todo ->
+                    todo.Deleted.IsNone || model.ShowDeleted)
+                |> List.map todoItem
+            )
         ]
         Bulma.field.div [
             field.isGrouped
@@ -108,11 +129,11 @@ let containerBox (model: Model) (dispatch: Msg -> unit) =
         Bulma.field.div [
             prop.children [
                 Switch.checkbox [
-                        prop.id "deleted-toggle"
-                        color.isSuccess
-                        switch.isRounded
-                        prop.onClick (fun _ -> dispatch ToggleShowDeleted)
-                    ]
+                    prop.id "deleted-toggle"
+                    color.isSuccess
+                    switch.isRounded
+                    prop.onClick (fun _ -> dispatch ToggleShowDeleted)
+                ]
                 Html.label [
                     prop.htmlFor "deleted-toggle"
                     prop.text " Show deleted?"
@@ -128,10 +149,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 column.is6
                 column.isOffset3
                 prop.children [
-                    Bulma.title [
-                        text.hasTextCentered
-                        prop.text "todo-app"
-                    ]
+                    Bulma.title [ text.hasTextCentered; prop.text "todo-app" ]
                     containerBox model dispatch
                 ]
             ]

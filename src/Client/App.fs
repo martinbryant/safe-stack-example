@@ -7,7 +7,7 @@ open Elmish.HMR
 #endif
 open Fable.Core.JsInterop
 
-importSideEffects "./index.css"
+importSideEffects "./style.scss"
 
 Program.mkProgram Index.init Index.update Index.view
 #if DEBUG

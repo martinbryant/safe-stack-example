@@ -20,7 +20,11 @@ type ConfirmationOpen =
     | Open of Guid
     | Closed
 
-type Model = { Todo: WebData<Todo, AppError>; IsConfirmationOpen: ConfirmationOpen; History: TodoHistoryItem list }
+type Model = {
+    Todo: WebData<Todo, AppError>
+    IsConfirmationOpen: ConfirmationOpen
+    History: TodoHistoryItem list
+}
 
 type Msg =
     | GotTodo of Result<Todo, AppError>
@@ -42,23 +46,29 @@ let getHistory id =
 
 let init (id: Guid) : Model * Cmd<Msg> =
     let cmd = Cmd.OfAsync.perform todosApi.getTodo id GotTodo
-    { Todo = Loading; IsConfirmationOpen = Closed; History = [] }, cmd
+
+    {
+        Todo = Loading
+        IsConfirmationOpen = Closed
+        History = []
+    },
+    cmd
 
 let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
     | GotTodo result ->
-        let newModel = match result with
-                        | Ok todo -> Loaded todo
-                        | Error error -> Errored error
+        let newModel =
+            match result with
+            | Ok todo -> Loaded todo
+            | Error error -> Errored error
 
-        let cmd = match result with
-                    | Ok todo ->
-                        getHistory todo.Id
-                    | Error _ -> Cmd.none
+        let cmd =
+            match result with
+            | Ok todo -> getHistory todo.Id
+            | Error _ -> Cmd.none
 
-        { model with Todo = newModel}, cmd
-    | GotHistory history ->
-        { model with History = history }, Cmd.none
+        { model with Todo = newModel }, cmd
+    | GotHistory history -> { model with History = history }, Cmd.none
 
     | RemoveTodo id ->
         let cmd = Cmd.OfAsync.perform todosApi.removeTodo id RemovedTodo
@@ -79,17 +89,24 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | CompletedTodo result ->
         match result with
         | Ok todo -> { model with Todo = Loaded todo }, getHistory todo.Id
-        | Error error -> match error with
-                            | NotFound -> model, Cmd.navigate "/"
-                            | _ -> { model with Todo = Errored error }, Cmd.none
+        | Error error ->
+            match error with
+            | NotFound -> model, Cmd.navigate "/"
+            | _ -> { model with Todo = Errored error }, Cmd.none
 
     | RequestRemove id ->
-        let model = { model with IsConfirmationOpen = Open id }
+        let model = {
+            model with
+                IsConfirmationOpen = Open id
+        }
 
         model, Cmd.none
 
     | CancelRemoveRequest ->
-        let model = { model with IsConfirmationOpen = Closed }
+        let model = {
+            model with
+                IsConfirmationOpen = Closed
+        }
 
         model, Cmd.none
 
@@ -101,7 +118,8 @@ let confirmationModal (model: Model) (dispatch: Msg -> unit) =
 
     Bulma.modal [
         prop.id "modal"
-        if model.IsConfirmationOpen <> Closed then modal.isActive
+        if model.IsConfirmationOpen <> Closed then
+            modal.isActive
         prop.children [
             Bulma.modalBackground []
             Bulma.modalContent [
@@ -113,14 +131,16 @@ let confirmationModal (model: Model) (dispatch: Msg -> unit) =
                             Bulma.control.p [
                                 Bulma.button.button [
                                     color.isDanger
-                                    prop.onClick (fun _ -> dispatch <| RemoveTodo id)
+                                    prop.onClick (fun _ ->
+                                        dispatch <| RemoveTodo id)
                                     prop.text "Confirm"
                                 ]
                             ]
                             Bulma.control.p [
                                 Bulma.button.button [
                                     color.isLight
-                                    prop.onClick (fun _ -> dispatch <| CancelRemoveRequest)
+                                    prop.onClick (fun _ ->
+                                        dispatch <| CancelRemoveRequest)
                                     prop.text "Cancel"
                                 ]
                             ]
@@ -200,23 +220,22 @@ let timelineHeader =
     Timeline.header [
         Bulma.tag [ color.isPrimary; tag.isMedium; prop.text "History" ]
     ]
+
 let eventReducer state history =
     match history.Event with
-    | TodoCreated _ -> state @ [createdSection history]
-    | TodoCompleted -> state @ [completeSection history]
-    | TodoDeleted -> state @ [deletedSection history]
+    | TodoCreated _ -> state @ [ createdSection history ]
+    | TodoCompleted -> state @ [ completeSection history ]
+    | TodoDeleted -> state @ [ deletedSection history ]
 
 let timeline (events: TodoHistoryItem list) =
-    Timeline.timeline (events |> List.fold eventReducer [timelineHeader] )
+    Timeline.timeline (events |> List.fold eventReducer [ timelineHeader ])
 
 
 let todoInfo (todo: Todo) (dispatch: Msg -> unit) =
     let createdDate = $"Created on %s{formatDate todo.Created}"
 
     Bulma.content [
-        Bulma.label [
-            prop.text createdDate
-        ]
+        Bulma.label [ prop.text createdDate ]
         todoControls todo dispatch
     ]
 
@@ -226,21 +245,17 @@ let todoTitle (model: Model) =
     | _ -> String.Empty
 
 let loadingView =
-    Bulma.column [
-        Bulma.progress [
-            color.isPrimary
-            prop.max 100
-        ]
-    ]
+    Bulma.column [ Bulma.progress [ color.isPrimary; prop.max 100 ] ]
 
 let views (model: Model) (dispatch: Msg -> unit) =
     match model.Todo with
-    | Loading | NotStarted -> loadingView
+    | Loading
+    | NotStarted -> loadingView
     | Loaded todo -> todoInfo todo dispatch
     | Errored error ->
         match error with
-            | NotFound -> Html.h1 "not found"
-            | Request message -> Html.h1 message
+        | NotFound -> Html.h1 "not found"
+        | Request message -> Html.h1 message
 
 let view (model: Model) (dispatch: Msg -> unit) =
     Bulma.heroBody [
@@ -253,12 +268,8 @@ let view (model: Model) (dispatch: Msg -> unit) =
                         text.hasTextCentered
                         prop.text (todoTitle model)
                     ]
-                    Bulma.box [
-                        views model dispatch
-                    ]
-                    Bulma.box [
-                        timeline model.History
-                    ]
+                    Bulma.box [ views model dispatch ]
+                    Bulma.box [ timeline model.History ]
                 ]
             ]
         ]
