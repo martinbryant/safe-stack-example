@@ -62,14 +62,7 @@ Target.create "Run" (fun _ ->
     ]
     |> runParallel)
 
-// Target.create "RunTests" (fun _ ->
-//     run dotnet "build" sharedTestsPath
-//
-//     [ "server", dotnet "watch run" serverTestsPath
-//       "client", dotnet "fable watch -o output -s --run npm run test:live" clientTestsPath ]
-//     |> runParallel)
-//
-// Target.create "Format" (fun _ -> run dotnet "fantomas . -r" "src")
+Target.create "Format" (fun _ -> run dotnet [ "fantomas"; "."; "-r" ] "src")
 
 open Fake.Core.TargetOperators
 
