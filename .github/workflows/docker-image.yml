@@ -57,5 +57,5 @@ jobs:
             password: ${{secrets.SSH_PASSWORD}}
             script: |
                 docker pull ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:main
-                docker-compose up -d --build safe
+                docker compose up -d --build safe
                 docker image prune --force
