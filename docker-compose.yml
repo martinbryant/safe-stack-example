@@ -3,6 +3,7 @@ services:
     image: postgres
     restart: always
     environment:
+      POSTGRES_DB: todo_store
       POSTGRES_PASSWORD: Monkey1234
     volumes:
       - pgdata:/var/lib/postgresql/data
