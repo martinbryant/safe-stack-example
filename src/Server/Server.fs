@@ -3,7 +3,6 @@ module Server
 open System.Text.Json.Serialization
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
-open JasperFx.CodeGeneration
 open Marten.Events.Projections
 open Marten.Services
 open Microsoft.AspNetCore.Http
@@ -63,14 +62,14 @@ let webApp =
     |> Remoting.fromContext todosApi
     |> Remoting.buildHttpHandler
 
-let configureServices (services: IServiceCollection) =
+let marten (services: IServiceCollection) =
     services.AddMarten(fun (options: StoreOptions) ->
         let config =
             services.BuildServiceProvider().GetService<IConfiguration>()
 
         options.Connection(config.GetConnectionString "Db")
 
-        options.AutoCreateSchemaObjects <- AutoCreate.All
+        options.AutoCreateSchemaObjects <- AutoCreate.CreateOrUpdate
 
         options.Projections.Snapshot<Todo> SnapshotLifecycle.Inline |> ignore
         options.Projections.LiveStreamAggregation<TodoHistory> |> ignore
@@ -81,6 +80,8 @@ let configureServices (services: IServiceCollection) =
     |> ignore
 
     services
+
+let configureServices = marten
 
 let app = application {
     use_router webApp
