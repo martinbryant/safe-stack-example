@@ -67,7 +67,7 @@ type EventStorage(store: IDocumentStore) =
         task {
             use session = store.LightweightSession()
 
-            let events = session.Events.AggregateStream<TodoHistory> id
+            let! events = session.Events.AggregateStreamAsync<TodoHistory> id
 
             return events
         }
