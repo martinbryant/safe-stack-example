@@ -5,9 +5,12 @@ open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
 open Marten.Events.Projections
 open Marten.Services
+open Microsoft.AspNetCore.Authentication.JwtBearer
+open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.IdentityModel.Tokens
 open Saturn
 open Shared
 open Marten
@@ -56,11 +59,21 @@ let todosApi (context: HttpContext) =
             }
     }
 
+let onlyLoggedIn = pipeline {
+    requires_authentication  (Giraffe.Auth.challenge JwtBearerDefaults.AuthenticationScheme)
+}
+
 let webApp =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.fromContext todosApi
     |> Remoting.buildHttpHandler
+
+let authRouter = router {
+    pipe_through onlyLoggedIn
+
+    forward "" webApp
+}
 
 let marten (services: IServiceCollection) =
     services.AddMarten(fun (options: StoreOptions) ->
@@ -81,10 +94,39 @@ let marten (services: IServiceCollection) =
 
     services
 
-let configureServices = marten
+let jwt (services: IServiceCollection) =
+    let config =
+            services.BuildServiceProvider().GetService<IConfiguration>()
+    let validIssuer = config["Keycloak:ValidIssuer"]
+    let metadata = config["Keycloak:Metadata"]
+
+    services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(fun (options: JwtBearerOptions) ->
+            let tokenParameters = TokenValidationParameters()
+
+            // tokenParameters.NameClaimType <- ClaimTypes.Name
+            // tokenParameters.RoleClaimType <- ClaimTypes.Role
+            tokenParameters.ValidIssuer <- validIssuer
+            // tokenParameters.ValidateIssuerSigningKey <- true
+            tokenParameters.ValidAudience <- "account"
+
+            options.Audience <- "account"
+            options.MetadataAddress <- metadata
+            options.RequireHttpsMetadata <- false
+            options.TokenValidationParameters <- tokenParameters
+            ) |> ignore
+
+    services
+
+let configureServices = marten >> jwt
+
+let configureApp (builder: IApplicationBuilder) =
+    builder.UseAuthentication()
 
 let app = application {
-    use_router webApp
+    use_router authRouter
+    app_config configureApp
     service_config configureServices
     memory_cache
     use_static "public"
