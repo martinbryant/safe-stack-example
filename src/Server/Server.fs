@@ -1,5 +1,6 @@
 module Server
 
+open System.Security.Claims
 open System.Text.Json.Serialization
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
@@ -16,17 +17,13 @@ open Shared
 open Marten
 open EventStore
 open Weasel.Core
+open Giraffe
 
-let todosApi (context: HttpContext) =
+let authTodosApi (context: HttpContext) =
     let store = context.GetService<IDocumentStore>()
     let eventStore = EventStorage(store)
 
     {
-        getTodos =
-            fun () -> async {
-                let! todos = eventStore.GetTodos()
-                return List.ofSeq todos
-            }
         addTodo =
             fun todo -> async {
                 let event = {
@@ -36,17 +33,6 @@ let todosApi (context: HttpContext) =
 
                 do! eventStore.AddTodo event
                 return todo
-            }
-        getTodo =
-            fun id -> async {
-                let! todo = eventStore.GetTodo id
-
-                return Ok todo
-            }
-        getHistory =
-            fun id -> async {
-                let! history = eventStore.GetHistory id
-                return history.Items
             }
         removeTodo = eventStore.RemoveTodo
         completeTodo =
@@ -59,11 +45,40 @@ let todosApi (context: HttpContext) =
             }
     }
 
+let todosApi (context: HttpContext) =
+    let store = context.GetService<IDocumentStore>()
+    let eventStore = EventStorage(store)
+
+    {
+        getTodos =
+            fun () -> async {
+                let! todos = eventStore.GetTodos()
+                return List.ofSeq todos
+            }
+        getTodo =
+            fun id -> async {
+                let! todo = eventStore.GetTodo id
+
+                return Ok todo
+            }
+        getHistory =
+            fun id -> async {
+                let! history = eventStore.GetHistory id
+                return history.Items
+            }
+    }
+
 let onlyLoggedIn = pipeline {
-    requires_authentication  (Giraffe.Auth.challenge JwtBearerDefaults.AuthenticationScheme)
+    requires_authentication  (Auth.challenge JwtBearerDefaults.AuthenticationScheme)
 }
 
-let webApp =
+let authTodosRouter =
+    Remoting.createApi ()
+    |> Remoting.withRouteBuilder Route.builder
+    |> Remoting.fromContext authTodosApi
+    |> Remoting.buildHttpHandler
+
+let todosRouter =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.fromContext todosApi
@@ -72,8 +87,13 @@ let webApp =
 let authRouter = router {
     pipe_through onlyLoggedIn
 
-    forward "" webApp
+    forward "" authTodosRouter
 }
+
+let webApp = choose [
+    todosRouter
+    authRouter
+]
 
 let marten (services: IServiceCollection) =
     services.AddMarten(fun (options: StoreOptions) ->
@@ -105,10 +125,10 @@ let jwt (services: IServiceCollection) =
         .AddJwtBearer(fun (options: JwtBearerOptions) ->
             let tokenParameters = TokenValidationParameters()
 
-            // tokenParameters.NameClaimType <- ClaimTypes.Name
-            // tokenParameters.RoleClaimType <- ClaimTypes.Role
+            tokenParameters.NameClaimType <- ClaimTypes.Name
+            tokenParameters.RoleClaimType <- ClaimTypes.Role
             tokenParameters.ValidIssuer <- validIssuer
-            // tokenParameters.ValidateIssuerSigningKey <- true
+            tokenParameters.ValidateIssuerSigningKey <- true
             tokenParameters.ValidAudience <- "account"
 
             options.Audience <- "account"
@@ -125,7 +145,7 @@ let configureApp (builder: IApplicationBuilder) =
     builder.UseAuthentication()
 
 let app = application {
-    use_router authRouter
+    use_router webApp
     app_config configureApp
     service_config configureServices
     memory_cache

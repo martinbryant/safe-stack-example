@@ -41,6 +41,12 @@ let todosApi =
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<ITodosApi>
 
+let authTodosApi =
+    Remoting.createApi ()
+    |> Remoting.withAuthorizationHeader "Bearer eyJhbGcOiJSUzI1NiIsInR5cCIgOiAildUIiwia2lkIiA6ICJMVmpOcEhhenQ3VkF4SXhOa0lxV3gybW1DZzh4NG9reDJoRWRwOF82LTU0In0.eyJleHAiOjE3NDMxNzU0MjcsImlhdCI6MTc0MzE3NTEyNywianRpIjoiNGI4ZDkxYjYtZDk2ZC00MDFmLTk4ZWEtOTIxZGZkYWVjMTM3IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo3MDgwL3JlYWxtcy9zYWZlLXRvZG8iLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiZGU3YmZjNWYtMTIwOS00OGFhLTgwODQtNWJkNzFlN2UyZWUyIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidG9kby1jbGllbnQiLCJzaWQiOiJkNTgyNWU3Zi01YzA4LTQzYTctOGMxOS0yNmZiMDdmNTdkMzQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIi8qIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiZGVmYXVsdC1yb2xlcy1zYWZlLXRvZG8iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJNYXJ0aW4gQnJ5YW50IiwicHJlZmVycmVkX3VzZXJuYW1lIjoibWFydGluIiwiZ2l2ZW5fbmFtZSI6Ik1hcnRpbiIsImZhbWlseV9uYW1lIjoiQnJ5YW50IiwiZW1haWwiOiJtYXJ0aW5icnlhbnQuZGV2QGdtYWlsLmNvbSJ9.bXNcKtNBaxgIXM9KiEHn7E1ai77xDvqYB52SW5Az2YdUqLlO41UMyRrD6d0b-lFqxqBfnnAbJr14imeGHldqT8_nkpfiV8hUNtH88mYdN15mPnyurq0CMKNwcKrH7TY9W_FDJl74pASmTfqoY01pQf6zpfoVaBjJWSThudnRgMURHOpEcTHtBYiT6rm1nbH7C23GWONOszwRe-M7ExnhPfY5NPvlmZgPkDEkZUN-uCb85ov0SwCc1ag9ybgihcINZ1wA8AOypezakwH-KBbzYrOsaCV61ZafyJLO17zF4uZKeV29aKasse86G_kFxv6Wpl_PoTk-yezhUa2sb0SW8Q"
+    |> Remoting.withRouteBuilder Route.builder
+    |> Remoting.buildProxy<IAuthTodosApi>
+
 let getHistory id =
     Cmd.OfAsync.perform todosApi.getHistory id GotHistory
 
@@ -71,7 +77,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | GotHistory history -> { model with History = history }, Cmd.none
 
     | RemoveTodo id ->
-        let cmd = Cmd.OfAsync.perform todosApi.removeTodo id RemovedTodo
+        let cmd = Cmd.OfAsync.perform authTodosApi.removeTodo id RemovedTodo
 
         model, cmd
 
@@ -81,7 +87,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         model, cmd
 
     | CompleteTodo id ->
-        let cmd = Cmd.OfAsync.perform todosApi.completeTodo id CompletedTodo
+        let cmd = Cmd.OfAsync.perform authTodosApi.completeTodo id CompletedTodo
         let model = { model with Todo = Loading }
 
         model, cmd
