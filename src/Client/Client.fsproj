@@ -6,10 +6,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Urls.fs" />
+    <Compile Include="Session.fs" />
     <Compile Include="pages/Todo.fs" />
     <Compile Include="pages/TodoList.fs" />
     <None Include="index.html" />
     <None Include="paket.references" />
+    <Compile Include="Keycloak.fs" />
     <Compile Include="Index.fs" />
     <Compile Include="App.fs" />
     <Content Include="vite.config.mts" />

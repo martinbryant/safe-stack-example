@@ -2,6 +2,7 @@ module TodoList
 
 open Elmish
 open Fable.Remoting.Client
+open Session
 open Shared
 open System
 open Feliz.Router
@@ -26,13 +27,14 @@ let todosApi =
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<ITodosApi>
 
-let authTodosApi =
+let createAuthApi token =
+    let bearer = $"Bearer {token}"
     Remoting.createApi ()
-    |> Remoting.withAuthorizationHeader "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIOiAiSldUIiwia2lkIiA6ICJMVmpOcEhhenQ3VkF4SXhOa0lxV3gybW1DZzh4NG9reDJoRWRwOF82LTU0In0.eyJleHAiOjE3NDMxNzU0MjcsImlhdCI6MTc0MzE3NTEyNywianRpIjoiNGI4ZDkxYjYtZDk2ZC00MDFmLTk4ZWEtOTIxZGZkYWVjMTM3IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo3MDgwL3JlYWxtcy9zYWZlLXRvZG8iLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiZGU3YmZjNWYtMTIwOS00OGFhLTgwODQtNWJkNzFlN2UyZWUyIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidG9kby1jbGllbnQiLCJzaWQiOiJkNTgyNWU3Zi01YzA4LTQzYTctOGMxOS0yNmZiMDdmNTdkMzQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIi8qIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiZGVmYXVsdC1yb2xlcy1zYWZlLXRvZG8iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJNYXJ0aW4gQnJ5YW50IiwicHJlZmVycmVkX3VzZXJuYW1lIjoibWFydGluIiwiZ2l2ZW5fbmFtZSI6Ik1hcnRpbiIsImZhbWlseV9uYW1lIjoiQnJ5YW50IiwiZW1haWwiOiJtYXJ0aW5icnlhbnQuZGV2QGdtYWlsLmNvbSJ9.bXNcKtNBaxgIXM9KiEHn7E1ai77xDvqYB52SW5Az2YdUqLlO41UMyRrD6d0b-lFqxqBfnnAbJr14imeGHldqT8_nkpfiV8hUNtH88mYdN15mPnyurq0CMKNwcKrH7TY9W_FDJl74pASmTfqoY01pQf6zpfoVaBjJWSThudnRgMURHOpEcTHtBYiT6rm1nbH7C23GWONOszwRe-M7ExnhPfY5NPvlmZgPkDEkZUN-uCb85ov0SwCc1ag9ybgihcINZ1wA8AOypezakwH-KBbzYrOsaCV61ZafyJLO17zF4uZKeV29aKasse86G_kFxv6Wpl_PoTk-yezhUa2sb0SW8Q"
+    |> Remoting.withAuthorizationHeader bearer
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<IAuthTodosApi>
 
-let init () : Model * Cmd<Msg> =
+let init user : Model * Cmd<Msg> =
     let model = {
         Todos = []
         Input = ""
@@ -43,7 +45,9 @@ let init () : Model * Cmd<Msg> =
 
     model, cmd
 
-let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update token (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+    let authTodosApi = createAuthApi token
+
     match msg with
     | GotTodos todos -> { model with Todos = todos }, Cmd.none
     | SetInput value -> { model with Input = value }, Cmd.none
