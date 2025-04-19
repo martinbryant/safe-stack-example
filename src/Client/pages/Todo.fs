@@ -1,7 +1,6 @@
 module Todo
 
 open System
-open Session
 open Shared
 open Elmish
 open Feliz
@@ -52,7 +51,7 @@ let createAuthApi (token: string) =
 let getHistory id =
     Cmd.OfAsync.perform todosApi.getHistory id GotHistory
 
-let init user (id: Guid) : Model * Cmd<Msg> =
+let init id =
     let cmd = Cmd.OfAsync.perform todosApi.getTodo id GotTodo
 
     {
@@ -62,7 +61,7 @@ let init user (id: Guid) : Model * Cmd<Msg> =
     },
     cmd
 
-let update token (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update token msg model =
     let authTodosApi = createAuthApi token
 
     match msg with
@@ -120,7 +119,7 @@ let update token (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 
         model, Cmd.none
 
-let confirmationModal (model: Model) (dispatch: Msg -> unit) =
+let confirmationModal model dispatch =
     let id =
         match model.IsConfirmationOpen with
         | Open id -> id
@@ -161,7 +160,7 @@ let confirmationModal (model: Model) (dispatch: Msg -> unit) =
         ]
     ]
 
-let todoControls (todo: Todo) (dispatch: Msg -> unit) =
+let todoControls todo dispatch=
     Bulma.field.div [
         field.isGrouped
         prop.children [
@@ -241,7 +240,7 @@ let timeline (events: TodoHistoryItem list) =
     Timeline.timeline (events |> List.fold eventReducer [ timelineHeader ])
 
 
-let todoInfo (todo: Todo) (dispatch: Msg -> unit) =
+let todoInfo todo dispatch =
     let createdDate = $"Created on %s{formatDate todo.Created}"
 
     Bulma.content [
@@ -249,7 +248,7 @@ let todoInfo (todo: Todo) (dispatch: Msg -> unit) =
         todoControls todo dispatch
     ]
 
-let todoTitle (model: Model) =
+let todoTitle model =
     match model.Todo with
     | Loaded todo -> todo.Description
     | _ -> String.Empty
@@ -257,7 +256,7 @@ let todoTitle (model: Model) =
 let loadingView =
     Bulma.column [ Bulma.progress [ color.isPrimary; prop.max 100 ] ]
 
-let views (model: Model) (dispatch: Msg -> unit) =
+let views model dispatch=
     match model.Todo with
     | Loading
     | NotStarted -> loadingView
@@ -267,7 +266,7 @@ let views (model: Model) (dispatch: Msg -> unit) =
         | NotFound -> Html.h1 "not found"
         | Request message -> Html.h1 message
 
-let view (model: Model) (dispatch: Msg -> unit) =
+let view model dispatch =
     Bulma.heroBody [
         Bulma.container [
             Bulma.column [

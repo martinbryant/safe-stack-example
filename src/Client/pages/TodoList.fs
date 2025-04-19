@@ -2,7 +2,6 @@ module TodoList
 
 open Elmish
 open Fable.Remoting.Client
-open Session
 open Shared
 open System
 open Feliz.Router
@@ -27,14 +26,14 @@ let todosApi =
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<ITodosApi>
 
-let createAuthApi token =
+let createAuthApi (token: string) =
     let bearer = $"Bearer {token}"
     Remoting.createApi ()
     |> Remoting.withAuthorizationHeader bearer
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<IAuthTodosApi>
 
-let init user : Model * Cmd<Msg> =
+let init =
     let model = {
         Todos = []
         Input = ""
@@ -45,7 +44,7 @@ let init user : Model * Cmd<Msg> =
 
     model, cmd
 
-let update token (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update token msg model =
     let authTodosApi = createAuthApi token
 
     match msg with
@@ -78,7 +77,7 @@ let update token (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 open Feliz
 open Feliz.Bulma
 
-let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo) =
+let todoItem dispatch todo =
     let clickTodo = fun _ -> todo.Id |> TodoClicked |> dispatch
 
     let strikethrough =
@@ -101,8 +100,8 @@ let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo) =
         )
     ]
 
-let containerBox (model: Model) (dispatch: Msg -> unit) =
-    let todoItem = todoItem model dispatch
+let containerBox model dispatch =
+    let todoItem = todoItem dispatch
 
     Bulma.box [
         Bulma.content [
@@ -152,7 +151,7 @@ let containerBox (model: Model) (dispatch: Msg -> unit) =
         ]
     ]
 
-let view (model: Model) (dispatch: Msg -> unit) =
+let view model dispatch =
     Bulma.heroBody [
         Bulma.container [
             Bulma.column [

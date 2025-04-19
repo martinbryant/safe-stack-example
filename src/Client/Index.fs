@@ -1,12 +1,10 @@
 module Index
 
 open Elmish
-open Fable.Remoting.Client
 open Feliz
 open Feliz.Bulma
 open System
 open Feliz.Router
-open Fable.Core
 open Keycloak
 open Session
 open Shared
@@ -32,15 +30,7 @@ let config: KeycloakConfig = {
     url = "http://localhost:7080"
     realm = "safe-todo"
     clientId = "todo-client"
-
 }
-
-let authTodosApi token =
-    let bearer = $"Bearer {token}"
-    Remoting.createApi ()
-    |> Remoting.withAuthorizationHeader bearer
-    |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<IAuthTodosApi>
 
 let keycloak = create config
 
@@ -55,10 +45,10 @@ let initFromUrl (url: string list) =
 
     match url with
     | [] ->
-        let model, cmd = TodoList.init user
+        let model, cmd = TodoList.init
         TodoList model, Cmd.map TodoListMsg cmd
     | [ "todo"; id ] ->
-        let model, cmd = Todo.init user (Guid.Parse id)
+        let model, cmd = Todo.init (Guid.Parse id)
         Todo model, Cmd.map TodoMsg cmd
     | _ -> NotFound, Cmd.none
 
@@ -80,7 +70,7 @@ let init () =
 
     { CurrentPage = page; User = user }, cmd
 
-let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update msg model =
     let user = parseUser()
 
     match model.CurrentPage, msg with
@@ -121,7 +111,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | NotFound, _
     | _, _ -> model, Cmd.none
 
-let viewPage (model: Model) (dispatch: Msg -> unit) =
+let viewPage model dispatch =
     match model.CurrentPage with
     | TodoList pageModel -> TodoList.view pageModel (dispatch << TodoListMsg)
 
