@@ -22,7 +22,9 @@ type Msg =
     | TodoListMsg of TodoList.Msg
     | TodoMsg of Todo.Msg
     | OnLoginRequested
+    | OnLogoutRequested
     | OnLoggedIn of unit
+    | OnLoggedOut of unit
     | OnInit of bool
     | UrlChanged of string list
 
@@ -41,8 +43,6 @@ let parseUser () =
         Guest
 
 let initFromUrl (url: string list) =
-    let user = parseUser()
-
     match url with
     | [] ->
         let model, cmd = TodoList.init
@@ -106,7 +106,14 @@ let update msg model =
             redirectUri = window.location.href
         }
         model, Cmd.OfPromise.perform keycloak.login loginConfig OnLoggedIn
+    | _, OnLogoutRequested ->
+        let loginConfig = {
+            redirectUri = window.location.href
+        }
+        model, Cmd.OfPromise.perform keycloak.logout loginConfig OnLoggedOut
     | _, OnLoggedIn _ ->
+        { model with User = user }, Cmd.none
+    | _, OnLoggedOut _ ->
         { model with User = user }, Cmd.none
     | NotFound, _
     | _, _ -> model, Cmd.none
@@ -130,15 +137,17 @@ let navBrand =
     ]
 
 let login user dispatch =
-    let children =
+    let children, onClick =
         match user with
         | Guest ->
-            Html.img [ prop.src "/favicon.png"; prop.alt "Logo" ]
+            Html.img [ prop.src "/favicon.png"; prop.alt "Logo" ],
+            (fun _ -> dispatch OnLoginRequested)
         | LoggedIn session ->
-            Html.label [ prop.text session.Name ]
+            Html.label [ prop.text session.Name ],
+            (fun _ -> dispatch OnLogoutRequested)
     Bulma.navbarBrand.div [
         Bulma.navbarItem.a [
-            prop.onClick (fun _ -> dispatch OnLoginRequested)
+            prop.onClick onClick
             navbarItem.isActive
             prop.children [
                 children
