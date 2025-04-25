@@ -29,7 +29,7 @@ type Msg =
     | UrlChanged of string list
 
 let config: KeycloakConfig = {
-    url = "http://localhost:7080"
+    url = Env.VITE_AUTH_ORIGIN
     realm = "safe-todo"
     clientId = "todo-client"
 }
@@ -140,7 +140,7 @@ let login user dispatch =
     let children, onClick =
         match user with
         | Guest ->
-            Html.img [ prop.src "/favicon.png"; prop.alt "Logo" ],
+            Html.label [ prop.text "Hi guest" ],
             (fun _ -> dispatch OnLoginRequested)
         | LoggedIn session ->
             Html.label [ prop.text session.Name ],

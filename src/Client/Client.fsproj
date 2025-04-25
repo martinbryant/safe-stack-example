@@ -5,6 +5,7 @@
     <DefineConstants>FABLE_COMPILER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Env.fs" />
     <Compile Include="Urls.fs" />
     <Compile Include="Session.fs" />
     <Compile Include="pages/Todo.fs" />
