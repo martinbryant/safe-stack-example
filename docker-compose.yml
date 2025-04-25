@@ -1,13 +1,36 @@
 services:
   db:
-    image: postgres
+    image: postgres:17
     restart: always
     environment:
-      POSTGRES_DB: todo_store
+      POSTGRES_MULTIPLE_DATABASES: todo_store,keycloak
       POSTGRES_PASSWORD: Monkey1234
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./pg-init:/docker-entrypoint-initdb.d
     ports:
-      - 5432:5432
+      - 5400:5432
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    restart: always
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: Monkey1234
+
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 7080
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_LOG_LEVEL: debug
+
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev
+    depends_on:
+      - db
+    ports:
+      - 7080:8080
 volumes:
   pgdata:

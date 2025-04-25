@@ -26,7 +26,14 @@ let todosApi =
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<ITodosApi>
 
-let init () : Model * Cmd<Msg> =
+let createAuthApi (token: string) =
+    let bearer = $"Bearer {token}"
+    Remoting.createApi ()
+    |> Remoting.withAuthorizationHeader bearer
+    |> Remoting.withRouteBuilder Route.builder
+    |> Remoting.buildProxy<IAuthTodosApi>
+
+let init =
     let model = {
         Todos = []
         Input = ""
@@ -37,14 +44,16 @@ let init () : Model * Cmd<Msg> =
 
     model, cmd
 
-let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let update token msg model =
+    let authTodosApi = createAuthApi token
+
     match msg with
     | GotTodos todos -> { model with Todos = todos }, Cmd.none
     | SetInput value -> { model with Input = value }, Cmd.none
     | AddTodo ->
         let todo = Todo.create model.Input
 
-        let cmd = Cmd.OfAsync.perform todosApi.addTodo todo AddedTodo
+        let cmd = Cmd.OfAsync.perform authTodosApi.addTodo todo AddedTodo
 
         { model with Input = "" }, cmd
     | AddedTodo todo ->
@@ -68,7 +77,7 @@ let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 open Feliz
 open Feliz.Bulma
 
-let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo) =
+let todoItem dispatch todo =
     let clickTodo = fun _ -> todo.Id |> TodoClicked |> dispatch
 
     let strikethrough =
@@ -91,8 +100,8 @@ let todoItem (model: Model) (dispatch: Msg -> unit) (todo: Todo) =
         )
     ]
 
-let containerBox (model: Model) (dispatch: Msg -> unit) =
-    let todoItem = todoItem model dispatch
+let containerBox model dispatch =
+    let todoItem = todoItem dispatch
 
     Bulma.box [
         Bulma.content [
@@ -142,7 +151,7 @@ let containerBox (model: Model) (dispatch: Msg -> unit) =
         ]
     ]
 
-let view (model: Model) (dispatch: Msg -> unit) =
+let view model dispatch =
     Bulma.heroBody [
         Bulma.container [
             Bulma.column [

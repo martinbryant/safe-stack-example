@@ -82,7 +82,7 @@ module TodoEvent =
 
 module Route =
     let builder typeName methodName =
-        sprintf "/api/%s/%s" typeName methodName
+        $"/api/%s{typeName}/%s{methodName}"
 
 
 type AppError =
@@ -91,9 +91,12 @@ type AppError =
 
 type ITodosApi = {
     getTodos: unit -> Async<Todo list>
-    addTodo: Todo -> Async<Todo>
     getTodo: Guid -> Async<Result<Todo, AppError>>
     getHistory: Guid -> Async<TodoHistoryItem list>
+}
+
+type IAuthTodosApi = {
+    addTodo: Todo -> Async<Todo>
     removeTodo: Guid -> Async<unit>
     completeTodo: Guid -> Async<Result<Todo, AppError>>
 }
