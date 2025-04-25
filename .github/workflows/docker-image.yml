@@ -48,6 +48,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          secret-envs:
+            - VITE_AUTH_ORIGIN=${{env.VITE_AUTH_ORIGIN}}
 
       - name: Pull and start
         uses: appleboy/ssh-action@v0.1.6
