@@ -13,6 +13,7 @@ WORKDIR /workspace
 COPY . .
 RUN dotnet tool restore
 RUN npm install vite@5.0.13 --save-dev
+ENV VITE_AUTH_ORIGIN=http://auth.martinbryant.dev
 RUN dotnet run Bundle
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
