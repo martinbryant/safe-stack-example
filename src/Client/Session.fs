@@ -1,10 +1,10 @@
 module Session
 
-type Session = {
+type LoggedInUser = {
     Name: string
 }
 
 type User =
     | Guest
-    | LoggedIn of Session
+    | LoggedIn of LoggedInUser
 
