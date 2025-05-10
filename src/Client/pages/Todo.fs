@@ -267,19 +267,17 @@ let views model dispatch=
         | Request message -> Html.h1 message
 
 let view model dispatch =
-    Bulma.heroBody [
-        Bulma.container [
-            Bulma.column [
-                column.is6
-                column.isOffset3
-                prop.children [
-                    Bulma.title [
-                        text.hasTextCentered
-                        prop.text (todoTitle model)
-                    ]
-                    Bulma.box [ views model dispatch ]
-                    Bulma.box [ timeline model.History ]
+    Bulma.container [
+        Bulma.column [
+            column.is6
+            column.isOffset3
+            prop.children [
+                Bulma.title [
+                    text.hasTextCentered
+                    prop.text (todoTitle model)
                 ]
+                Bulma.box [ views model dispatch ]
+                Bulma.box [ timeline model.History ]
             ]
         ]
         confirmationModal model dispatch

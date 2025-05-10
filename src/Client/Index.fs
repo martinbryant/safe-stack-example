@@ -5,6 +5,7 @@ open Feliz
 open Feliz.Bulma
 open System
 open Feliz.Router
+open Feliz.style
 open Keycloak
 open Session
 open Shared
@@ -127,30 +128,55 @@ let viewPage model dispatch =
 
 let navBrand =
     Bulma.navbarBrand.div [
-        Bulma.navbarItem.a [
-            prop.href "https://safe-stack.github.io/"
-            navbarItem.isActive
-            prop.children [
-                Html.img [ prop.src "/favicon.png"; prop.alt "Logo" ]
+        color.hasBackgroundPrimary
+        prop.children [
+            Bulma.navbarItem.a [
+                prop.href "https://safe-stack.github.io/"
+                prop.children [
+                    Html.img [ prop.src "/favicon.png"; prop.alt "Logo" ]
+                ]
             ]
         ]
     ]
 
 let login user dispatch =
-    let children, onClick =
+    let userText, dropdownActionText, onClick =
         match user with
         | Guest ->
-            Html.label [ prop.text "Hi guest" ],
+            "guest",
+            "Login",
             (fun _ -> dispatch OnLoginRequested)
         | LoggedIn session ->
-            Html.label [ prop.text session.Name ],
+            session.Name,
+            "Logout",
             (fun _ -> dispatch OnLogoutRequested)
-    Bulma.navbarBrand.div [
-        Bulma.navbarItem.a [
-            prop.onClick onClick
-            navbarItem.isActive
+    Bulma.navbarMenu [
+        Bulma.navbarEnd.div [
             prop.children [
-                children
+                Bulma.navbarItem.div [
+                    navbarItem.hasDropdown
+                    navbarItem.isHoverable
+                    color.isPrimary
+                    color.hasBackgroundPrimary
+                    prop.children [
+                        Bulma.navbarLink.a [
+                            navbarLink.isArrowless
+                            prop.text $"Hi {userText}"
+                        ]
+                        Bulma.navbarDropdown.div [
+                            prop.style [
+                                backgroundColor.transparent
+                                borderStyle.none
+                            ]
+                            prop.children [
+                                Bulma.navbarItem.a [
+                                    prop.onClick onClick
+                                    prop.text dropdownActionText
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
             ]
         ]
     ]
@@ -170,7 +196,17 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 ]
                 prop.children [
                     Bulma.heroHead [
-                        Bulma.navbar [ Bulma.container [ navBrand; login model.User dispatch ] ]
+                        prop.style [
+                            style.margin (0,40)
+                        ]
+                        prop.children [
+                            Bulma.navbar [
+                                navbar.isTransparent
+                                prop.children [
+                                    navBrand; login model.User dispatch
+                                ]
+                            ]
+                        ]
                     ]
                     Bulma.heroBody [ viewPage model dispatch ]
                 ]

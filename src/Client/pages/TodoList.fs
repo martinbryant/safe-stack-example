@@ -152,15 +152,13 @@ let containerBox model dispatch =
     ]
 
 let view model dispatch =
-    Bulma.heroBody [
-        Bulma.container [
-            Bulma.column [
-                column.is6
-                column.isOffset3
-                prop.children [
-                    Bulma.title [ text.hasTextCentered; prop.text "todo-app" ]
-                    containerBox model dispatch
-                ]
+    Bulma.container [
+        Bulma.column [
+            column.is6
+            column.isOffset3
+            prop.children [
+                Bulma.title [ text.hasTextCentered; prop.text "todo-app" ]
+                containerBox model dispatch
             ]
         ]
     ]
