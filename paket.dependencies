@@ -2,6 +2,7 @@ source https://api.nuget.org/v3/index.json
 framework: net8.0
 storage: none
 
+nuget Elmish.Toastr
 nuget Fable.DateFunctions
 nuget Feliz.Bulma.Switch
 nuget Feliz.Bulma.Timeline

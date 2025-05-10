@@ -1,10 +1,14 @@
 module Index
 
 open Elmish
+open Elmish.Toastr
+open Fable.Core
+open Fable.Remoting.Client
 open Feliz
 open Feliz.Bulma
 open System
 open Feliz.Router
+open Feliz.style
 open Keycloak
 open Session
 open Shared
@@ -42,6 +46,22 @@ let parseUser () =
     else
         Guest
 
+let errorToast message =
+    Toastr.message message
+    |> Toastr.position ToastPosition.TopCenter
+    |> Toastr.error
+
+let apiErrorCmd (exn: exn) =
+    match exn with
+        | :? ProxyRequestException as exn when exn.StatusCode = 401 ->
+            let notAuthCmd = errorToast "You must be logged in to do this"
+            let onLogoutCmd = Cmd.OfFunc.perform keycloak.clearToken () OnLoggedOut
+
+            Cmd.batch [ notAuthCmd; onLogoutCmd ]
+        | :? ProxyRequestException as _ ->
+            errorToast "An unexpected error has occured. Please try again"
+        | _ -> Cmd.none
+
 let initFromUrl (url: string list) =
     match url with
     | [] ->
@@ -75,6 +95,11 @@ let update msg model =
 
     match model.CurrentPage, msg with
     | TodoList todoModel, TodoListMsg todoMsg ->
+        let apiErrorCmd =
+            match todoMsg with
+            | TodoList.ApiError exn -> apiErrorCmd exn
+            | _ -> Cmd.none
+
         let todoModel, todoCmd = TodoList.update keycloak.token todoMsg todoModel
 
         let nextState = {
@@ -83,9 +108,14 @@ let update msg model =
         }
 
         let nextCmd = Cmd.map TodoListMsg todoCmd
-        nextState, nextCmd
+        nextState, Cmd.batch [ apiErrorCmd; nextCmd ]
 
     | Todo todoModel, TodoMsg todoMsg ->
+        let apiErrorCmd =
+            match todoMsg with
+            | Todo.ApiError exn -> apiErrorCmd exn
+            | _ -> Cmd.none
+
         let todoModel, todoCmd = Todo.update keycloak.token todoMsg todoModel
 
         let nextState = {
@@ -94,7 +124,7 @@ let update msg model =
         }
 
         let nextCmd = Cmd.map TodoMsg todoCmd
-        nextState, nextCmd
+        nextState, Cmd.batch [ apiErrorCmd; nextCmd ]
     | _, UrlChanged url ->
         let page, cmd = initFromUrl url
 
@@ -127,30 +157,55 @@ let viewPage model dispatch =
 
 let navBrand =
     Bulma.navbarBrand.div [
-        Bulma.navbarItem.a [
-            prop.href "https://safe-stack.github.io/"
-            navbarItem.isActive
-            prop.children [
-                Html.img [ prop.src "/favicon.png"; prop.alt "Logo" ]
+        color.hasBackgroundPrimary
+        prop.children [
+            Bulma.navbarItem.a [
+                prop.href "https://safe-stack.github.io/"
+                prop.children [
+                    Html.img [ prop.src "/favicon.png"; prop.alt "Logo" ]
+                ]
             ]
         ]
     ]
 
 let login user dispatch =
-    let children, onClick =
+    let userText, dropdownActionText, onClick =
         match user with
         | Guest ->
-            Html.label [ prop.text "Hi guest" ],
+            "guest",
+            "Login",
             (fun _ -> dispatch OnLoginRequested)
         | LoggedIn session ->
-            Html.label [ prop.text session.Name ],
+            session.Name,
+            "Logout",
             (fun _ -> dispatch OnLogoutRequested)
-    Bulma.navbarBrand.div [
-        Bulma.navbarItem.a [
-            prop.onClick onClick
-            navbarItem.isActive
+    Bulma.navbarMenu [
+        Bulma.navbarEnd.div [
             prop.children [
-                children
+                Bulma.navbarItem.div [
+                    navbarItem.hasDropdown
+                    navbarItem.isHoverable
+                    color.isPrimary
+                    color.hasBackgroundPrimary
+                    prop.children [
+                        Bulma.navbarLink.a [
+                            navbarLink.isArrowless
+                            prop.text $"Hi {userText}"
+                        ]
+                        Bulma.navbarDropdown.div [
+                            prop.style [
+                                backgroundColor.transparent
+                                borderStyle.none
+                            ]
+                            prop.children [
+                                Bulma.navbarItem.a [
+                                    prop.onClick onClick
+                                    prop.text dropdownActionText
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
             ]
         ]
     ]
@@ -170,7 +225,17 @@ let view (model: Model) (dispatch: Msg -> unit) =
                 ]
                 prop.children [
                     Bulma.heroHead [
-                        Bulma.navbar [ Bulma.container [ navBrand; login model.User dispatch ] ]
+                        prop.style [
+                            style.margin (0,40)
+                        ]
+                        prop.children [
+                            Bulma.navbar [
+                                navbar.isTransparent
+                                prop.children [
+                                    navBrand; login model.User dispatch
+                                ]
+                            ]
+                        ]
                     ]
                     Bulma.heroBody [ viewPage model dispatch ]
                 ]

@@ -36,6 +36,8 @@ type Keycloak =
     abstract init: options: KeycloakInitOptions -> Promise<bool>
     abstract login: options: KeycloakLoginOptions -> Promise<unit>
     abstract logout: options: KeycloakLoginOptions -> Promise<unit>
+    abstract clearToken: unit -> unit
+
 
 let keycloakInstance = importDefault<JsConstructor> "keycloak-js"
 

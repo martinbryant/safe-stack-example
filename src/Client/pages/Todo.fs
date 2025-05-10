@@ -35,6 +35,7 @@ type Msg =
     | CompletedTodo of Result<Todo, AppError>
     | RequestRemove of Guid
     | CancelRemoveRequest
+    | ApiError of exn
 
 let todosApi =
     Remoting.createApi ()
@@ -80,7 +81,7 @@ let update token msg model =
     | GotHistory history -> { model with History = history }, Cmd.none
 
     | RemoveTodo id ->
-        let cmd = Cmd.OfAsync.perform authTodosApi.removeTodo id RemovedTodo
+        let cmd = Cmd.OfAsync.either authTodosApi.removeTodo id RemovedTodo ApiError
 
         model, cmd
 
@@ -90,8 +91,7 @@ let update token msg model =
         model, cmd
 
     | CompleteTodo id ->
-        let cmd = Cmd.OfAsync.perform authTodosApi.completeTodo id CompletedTodo
-        let model = { model with Todo = Loading }
+        let cmd = Cmd.OfAsync.either authTodosApi.completeTodo id CompletedTodo ApiError
 
         model, cmd
 
@@ -118,6 +118,8 @@ let update token msg model =
         }
 
         model, Cmd.none
+    | ApiError _ ->
+        model, Cmd.ofMsg CancelRemoveRequest
 
 let confirmationModal model dispatch =
     let id =
@@ -267,19 +269,17 @@ let views model dispatch=
         | Request message -> Html.h1 message
 
 let view model dispatch =
-    Bulma.heroBody [
-        Bulma.container [
-            Bulma.column [
-                column.is6
-                column.isOffset3
-                prop.children [
-                    Bulma.title [
-                        text.hasTextCentered
-                        prop.text (todoTitle model)
-                    ]
-                    Bulma.box [ views model dispatch ]
-                    Bulma.box [ timeline model.History ]
+    Bulma.container [
+        Bulma.column [
+            column.is6
+            column.isOffset3
+            prop.children [
+                Bulma.title [
+                    text.hasTextCentered
+                    prop.text (todoTitle model)
                 ]
+                Bulma.box [ views model dispatch ]
+                Bulma.box [ timeline model.History ]
             ]
         ]
         confirmationModal model dispatch
