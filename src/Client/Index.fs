@@ -2,6 +2,7 @@ module Index
 
 open Elmish
 open Elmish.Toastr
+open Fable.Core
 open Fable.Remoting.Client
 open Feliz
 open Feliz.Bulma
@@ -53,9 +54,12 @@ let errorToast message =
 let apiErrorCmd (exn: exn) =
     match exn with
         | :? ProxyRequestException as exn when exn.StatusCode = 401 ->
-            errorToast "You must be logged in to do this"
+            let notAuthCmd = errorToast "You must be logged in to do this"
+            let onLogoutCmd = Cmd.OfFunc.perform keycloak.clearToken () OnLoggedOut
+
+            Cmd.batch [ notAuthCmd; onLogoutCmd ]
         | :? ProxyRequestException as _ ->
-            errorToast "An unexpected error has occured. Please try again."
+            errorToast "An unexpected error has occured. Please try again"
         | _ -> Cmd.none
 
 let initFromUrl (url: string list) =
