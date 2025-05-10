@@ -1,6 +1,8 @@
 module Index
 
 open Elmish
+open Elmish.Toastr
+open Fable.Remoting.Client
 open Feliz
 open Feliz.Bulma
 open System
@@ -43,6 +45,19 @@ let parseUser () =
     else
         Guest
 
+let errorToast message =
+    Toastr.message message
+    |> Toastr.position ToastPosition.TopCenter
+    |> Toastr.error
+
+let apiErrorCmd (exn: exn) =
+    match exn with
+        | :? ProxyRequestException as exn when exn.StatusCode = 401 ->
+            errorToast "You must be logged in to do this"
+        | :? ProxyRequestException as _ ->
+            errorToast "An unexpected error has occured. Please try again."
+        | _ -> Cmd.none
+
 let initFromUrl (url: string list) =
     match url with
     | [] ->
@@ -76,6 +91,11 @@ let update msg model =
 
     match model.CurrentPage, msg with
     | TodoList todoModel, TodoListMsg todoMsg ->
+        let apiErrorCmd =
+            match todoMsg with
+            | TodoList.ApiError exn -> apiErrorCmd exn
+            | _ -> Cmd.none
+
         let todoModel, todoCmd = TodoList.update keycloak.token todoMsg todoModel
 
         let nextState = {
@@ -84,9 +104,14 @@ let update msg model =
         }
 
         let nextCmd = Cmd.map TodoListMsg todoCmd
-        nextState, nextCmd
+        nextState, Cmd.batch [ apiErrorCmd; nextCmd ]
 
     | Todo todoModel, TodoMsg todoMsg ->
+        let apiErrorCmd =
+            match todoMsg with
+            | Todo.ApiError exn -> apiErrorCmd exn
+            | _ -> Cmd.none
+
         let todoModel, todoCmd = Todo.update keycloak.token todoMsg todoModel
 
         let nextState = {
@@ -95,7 +120,7 @@ let update msg model =
         }
 
         let nextCmd = Cmd.map TodoMsg todoCmd
-        nextState, nextCmd
+        nextState, Cmd.batch [ apiErrorCmd; nextCmd ]
     | _, UrlChanged url ->
         let page, cmd = initFromUrl url
 

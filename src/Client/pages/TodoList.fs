@@ -20,6 +20,7 @@ type Msg =
     | AddedTodo of Todo
     | TodoClicked of Guid
     | ToggleShowDeleted
+    | ApiError of exn
 
 let todosApi =
     Remoting.createApi ()
@@ -53,7 +54,7 @@ let update token msg model =
     | AddTodo ->
         let todo = Todo.create model.Input
 
-        let cmd = Cmd.OfAsync.perform authTodosApi.addTodo todo AddedTodo
+        let cmd = Cmd.OfAsync.either authTodosApi.addTodo todo AddedTodo ApiError
 
         { model with Input = "" }, cmd
     | AddedTodo todo ->
@@ -72,7 +73,8 @@ let update token msg model =
                 ShowDeleted = not model.ShowDeleted
         },
         Cmd.none
-
+    | ApiError _ ->
+        model, Cmd.none
 
 open Feliz
 open Feliz.Bulma

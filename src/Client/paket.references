@@ -1,7 +1,7 @@
 SAFE.Client
-
 Feliz.Bulma
 Feliz.Router
 Fable.DateFunctions
 Feliz.Bulma.Switch
 Feliz.Bulma.Timeline
+Elmish.Toastr

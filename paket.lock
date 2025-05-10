@@ -2,6 +2,10 @@ STORAGE: NONE
 RESTRICTION: == net8.0
 NUGET
   remote: https://api.nuget.org/v3/index.json
+    Elmish.Toastr (2.1)
+      Fable.Core (>= 3.0)
+      Fable.Elmish (>= 3.0)
+      FSharp.Core (>= 4.6.2)
     Expecto (9.0.4)
       FSharp.Core (>= 4.6)
       Mono.Cecil (>= 0.11.3)
