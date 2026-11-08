@@ -1,0 +1,94 @@
+{
+  "realm": "safe-todo",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "roles": {
+    "realm": [
+      { "name": "todo-edit", "description": "Can add and complete todos" },
+      { "name": "todo-remove", "description": "Can delete todos" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "todo-client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email",
+        "todo-roles"
+      ]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "todo-roles",
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "edit-user",
+      "enabled": true,
+      "email": "edit-user@example.test",
+      "emailVerified": true,
+      "firstName": "Edit",
+      "lastName": "User",
+      "credentials": [
+        { "type": "password", "value": "edit-user", "temporary": false }
+      ],
+      "realmRoles": ["todo-edit"]
+    },
+    {
+      "username": "remove-user",
+      "enabled": true,
+      "email": "remove-user@example.test",
+      "emailVerified": true,
+      "firstName": "Remove",
+      "lastName": "User",
+      "credentials": [
+        { "type": "password", "value": "remove-user", "temporary": false }
+      ],
+      "realmRoles": ["todo-remove"]
+    },
+    {
+      "username": "full-user",
+      "enabled": true,
+      "email": "full-user@example.test",
+      "emailVerified": true,
+      "firstName": "Full",
+      "lastName": "User",
+      "credentials": [
+        { "type": "password", "value": "full-user", "temporary": false }
+      ],
+      "realmRoles": ["todo-edit", "todo-remove"]
+    }
+  ]
+}

@@ -58,6 +58,8 @@ let apiErrorCmd (exn: exn) =
             let onLogoutCmd = Cmd.OfFunc.perform keycloak.clearToken () OnLoggedOut
 
             Cmd.batch [ notAuthCmd; onLogoutCmd ]
+        | :? ProxyRequestException as exn when exn.StatusCode = 403 ->
+            errorToast "You don't have permission to do this"
         | :? ProxyRequestException as _ ->
             errorToast "An unexpected error has occured. Please try again"
         | _ -> Cmd.none

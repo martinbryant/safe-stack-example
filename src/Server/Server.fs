@@ -19,6 +19,12 @@ open EventStore
 open Giraffe
 open Projections
 
+exception ForbiddenException
+
+let requireRole (context: HttpContext) (role: string) =
+    if not (context.User.IsInRole role) then
+        raise ForbiddenException
+
 let authTodosApi (context: HttpContext) =
     let store = context.GetService<IDocumentStore>()
     let eventStore = EventStorage(store)
@@ -26,6 +32,8 @@ let authTodosApi (context: HttpContext) =
     {
         addTodo =
             fun todo -> async {
+                requireRole context "todo-edit"
+
                 let event = {
                     Id = todo.Id
                     Description = todo.Description
@@ -34,9 +42,15 @@ let authTodosApi (context: HttpContext) =
                 do! eventStore.AddTodo event
                 return todo
             }
-        removeTodo = eventStore.RemoveTodo
+        removeTodo =
+            fun id -> async {
+                requireRole context "todo-remove"
+                do! eventStore.RemoveTodo id
+            }
         completeTodo =
             fun id -> async {
+                requireRole context "todo-edit"
+
                 do! eventStore.CompleteTodo id
 
                 let! todo = eventStore.GetTodo id
@@ -72,21 +86,26 @@ let onlyLoggedIn = pipeline {
     requires_authentication  (Auth.challenge JwtBearerDefaults.AuthenticationScheme)
 }
 
-let debugErrorHandler (ex: exn) (_: RouteInfo<HttpContext>) =
-    eprintfn "DEBUG ERROR HANDLER: %s" (ex.ToString())
-    Propagate ex.Message
+let errorHandler (ex: exn) (routeInfo: RouteInfo<HttpContext>) =
+    match ex with
+    | ForbiddenException ->
+        routeInfo.httpContext.Response.StatusCode <- 403
+        Ignore
+    | _ ->
+        eprintfn "DEBUG ERROR HANDLER: %s" (ex.ToString())
+        Propagate ex.Message
 
 let authTodosRouter =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.withErrorHandler debugErrorHandler
+    |> Remoting.withErrorHandler errorHandler
     |> Remoting.fromContext authTodosApi
     |> Remoting.buildHttpHandler
 
 let todosRouter =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.withErrorHandler debugErrorHandler
+    |> Remoting.withErrorHandler errorHandler
     |> Remoting.fromContext todosApi
     |> Remoting.buildHttpHandler
 
