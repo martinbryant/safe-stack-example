@@ -1,8 +1,6 @@
 namespace Shared
 
 open System
-open Marten.Events
-open Marten.Events.Projections
 
 type CreatedData = { Id: Guid; Description: string }
 
@@ -15,22 +13,7 @@ type TodoEvent =
 type TodoHistoryItem = { At: DateTimeOffset; Event: TodoEvent }
 
 [<CLIMutable>]
-type TodoHistory = {
-    Id: Guid
-    Items: TodoHistoryItem list
-} with
-
-    member this.Apply(event: TodoEvent, meta: IEvent) : TodoHistory =
-        match event with
-        | TodoCreated data -> {
-            this with
-                Id = data.Id
-                Items = [ { At = meta.Timestamp; Event = event } ]
-          }
-        | _ -> {
-            this with
-                Items = this.Items @ [ { At = meta.Timestamp; Event = event } ]
-          }
+type TodoHistory = { Id: Guid; Items: TodoHistoryItem list }
 
 [<CLIMutable>]
 type Todo = {
@@ -39,25 +22,7 @@ type Todo = {
     Created: DateTimeOffset
     Completed: DateTimeOffset option
     Deleted: DateTimeOffset option
-} with
-
-    member this.Apply(event: TodoEvent, meta: IEvent) : Todo =
-        match event with
-        | TodoCreated data -> {
-            Id = data.Id
-            Description = data.Description
-            Created = meta.Timestamp
-            Completed = None
-            Deleted = None
-          }
-        | TodoCompleted -> {
-            this with
-                Completed = Some meta.Timestamp
-          }
-        | TodoDeleted -> {
-            this with
-                Deleted = Some meta.Timestamp
-          }
+}
 
 module Todo =
     let isValid (description: string) =

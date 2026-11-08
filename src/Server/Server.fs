@@ -4,8 +4,8 @@ open System.Security.Claims
 open System.Text.Json.Serialization
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
-open Marten.Events.Projections
-open Marten.Services
+open JasperFx
+open JasperFx.Events.Projections
 open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
@@ -16,8 +16,8 @@ open Saturn
 open Shared
 open Marten
 open EventStore
-open Weasel.Core
 open Giraffe
+open Projections
 
 let authTodosApi (context: HttpContext) =
     let store = context.GetService<IDocumentStore>()
@@ -72,15 +72,21 @@ let onlyLoggedIn = pipeline {
     requires_authentication  (Auth.challenge JwtBearerDefaults.AuthenticationScheme)
 }
 
+let debugErrorHandler (ex: exn) (_: RouteInfo<HttpContext>) =
+    eprintfn "DEBUG ERROR HANDLER: %s" (ex.ToString())
+    Propagate ex.Message
+
 let authTodosRouter =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder Route.builder
+    |> Remoting.withErrorHandler debugErrorHandler
     |> Remoting.fromContext authTodosApi
     |> Remoting.buildHttpHandler
 
 let todosRouter =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder Route.builder
+    |> Remoting.withErrorHandler debugErrorHandler
     |> Remoting.fromContext todosApi
     |> Remoting.buildHttpHandler
 
@@ -104,12 +110,10 @@ let marten (services: IServiceCollection) =
 
         options.AutoCreateSchemaObjects <- AutoCreate.CreateOrUpdate
 
-        options.Projections.Snapshot<Todo> SnapshotLifecycle.Inline |> ignore
-        options.Projections.LiveStreamAggregation<TodoHistory> |> ignore
+        options.Projections.Add(TodoProjection(), ProjectionLifecycle.Inline)
+        options.Projections.Add(TodoHistoryProjection(), ProjectionLifecycle.Live)
 
-        let serializer = SystemTextJsonSerializer()
-        serializer.Configure(fun v -> v.Converters.Add(JsonFSharpConverter()))
-        options.Serializer serializer)
+        options.UseSystemTextJsonForSerialization(configure = fun v -> v.Converters.Add(JsonFSharpConverter())))
     |> ignore
 
     services

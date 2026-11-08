@@ -1,4 +1,9 @@
-SAFE.Client
+Fable.Core
+Fable.Elmish
+Fable.Elmish.HMR
+Fable.Elmish.React
+Fable.Remoting.Client
+Fable.Browser.Dom
 Feliz.Bulma
 Feliz.Router
 Fable.DateFunctions
