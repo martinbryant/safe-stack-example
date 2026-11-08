@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
 # Install node
 ARG NODE_MAJOR=20
@@ -16,7 +16,7 @@ RUN npm install vite@5.0.13 --save-dev
 ENV VITE_AUTH_ORIGIN=https://auth.martinbryant.dev
 RUN dotnet run Bundle
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
 COPY --from=build /workspace/deploy /app
 WORKDIR /app
 EXPOSE 5000
