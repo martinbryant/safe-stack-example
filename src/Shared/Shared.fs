@@ -58,9 +58,6 @@ type ITodosApi = {
     getTodos: unit -> Async<Todo list>
     getTodo: Guid -> Async<Result<Todo, AppError>>
     getHistory: Guid -> Async<TodoHistoryItem list>
-}
-
-type IAuthTodosApi = {
     addTodo: Todo -> Async<Todo>
     removeTodo: Guid -> Async<unit>
     completeTodo: Guid -> Async<Result<Todo, AppError>>

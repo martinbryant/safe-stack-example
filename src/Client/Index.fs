@@ -60,22 +60,30 @@ let apiErrorCmd (exn: exn) =
             Cmd.batch [ notAuthCmd; onLogoutCmd ]
         | :? ProxyRequestException as exn when exn.StatusCode = 403 ->
             errorToast "You don't have permission to do this"
+        | :? ProxyRequestException as exn when exn.StatusCode = 404 ->
+            let notFoundCmd = errorToast "That todo doesn't exist"
+            let navigateCmd = Cmd.navigate "/"
+
+            Cmd.batch [ notFoundCmd; navigateCmd ]
         | :? ProxyRequestException as _ ->
             errorToast "An unexpected error has occured. Please try again"
         | _ -> Cmd.none
 
 let initFromUrl (url: string list) =
     match url with
-    | [] ->
-        let model, cmd = TodoList.init
-        TodoList model, Cmd.map TodoListMsg cmd
-    | [ "todo"; id ] ->
-        let model, cmd = Todo.init (Guid.Parse id)
-        Todo model, Cmd.map TodoMsg cmd
-    | _ -> NotFound, Cmd.none
+    | [] -> TodoList(fst TodoList.init)
+    | [ "todo"; id ] -> Todo(fst (Todo.init (Guid.Parse id)))
+    | _ -> NotFound
+
+let loadPageCmd (user: User) (page: Page) =
+    match user, page with
+    | LoggedIn _, TodoList _ -> Cmd.ofMsg (TodoListMsg TodoList.LoadTodos)
+    | LoggedIn _, Todo _ -> Cmd.ofMsg (TodoMsg Todo.LoadTodo)
+    | Guest, _
+    | _, NotFound -> Cmd.none
 
 let init () =
-    let page, pageCmd = Router.currentUrl () |> initFromUrl
+    let page = Router.currentUrl () |> initFromUrl
 
     let config = {
         onLoad = "check-sso"
@@ -88,9 +96,7 @@ let init () =
 
     let user = parseUser()
 
-    let cmd = Cmd.batch [ pageCmd; initCmd ]
-
-    { CurrentPage = page; User = user }, cmd
+    { CurrentPage = page; User = user }, initCmd
 
 let update msg model =
     let user = parseUser()
@@ -110,7 +116,9 @@ let update msg model =
         }
 
         let nextCmd = Cmd.map TodoListMsg todoCmd
-        nextState, Cmd.batch [ apiErrorCmd; nextCmd ]
+        let cmd = Cmd.batch [ apiErrorCmd; nextCmd ]
+
+        nextState, cmd
 
     | Todo todoModel, TodoMsg todoMsg ->
         let apiErrorCmd =
@@ -126,36 +134,72 @@ let update msg model =
         }
 
         let nextCmd = Cmd.map TodoMsg todoCmd
-        nextState, Cmd.batch [ apiErrorCmd; nextCmd ]
+        let cmd = Cmd.batch [ apiErrorCmd; nextCmd ]
+
+        nextState, cmd
     | _, UrlChanged url ->
-        let page, cmd = initFromUrl url
+        let page = initFromUrl url
+        let cmd = loadPageCmd model.User page
 
         { model with CurrentPage = page }, cmd
-    | _, OnInit _->
-        { model with User = user }, Cmd.none
+    | _, OnInit _ ->
+        let cmd = loadPageCmd user model.CurrentPage
+
+        { model with User = user }, cmd
     | _, OnLoginRequested ->
         let loginConfig = {
             redirectUri = window.location.href
         }
-        model, Cmd.OfPromise.perform keycloak.login loginConfig OnLoggedIn
+
+        let cmd = Cmd.OfPromise.perform keycloak.login loginConfig OnLoggedIn
+
+        model, cmd
     | _, OnLogoutRequested ->
         let loginConfig = {
             redirectUri = window.location.href
         }
-        model, Cmd.OfPromise.perform keycloak.logout loginConfig OnLoggedOut
+
+        let cmd = Cmd.OfPromise.perform keycloak.logout loginConfig OnLoggedOut
+
+        model, cmd
     | _, OnLoggedIn _ ->
-        { model with User = user }, Cmd.none
+        let cmd = loadPageCmd user model.CurrentPage
+
+        { model with User = user }, cmd
     | _, OnLoggedOut _ ->
         { model with User = user }, Cmd.none
     | NotFound, _
     | _, _ -> model, Cmd.none
 
-let viewPage model dispatch =
-    match model.CurrentPage with
-    | TodoList pageModel -> TodoList.view pageModel (dispatch << TodoListMsg)
+let pleaseLogIn dispatch =
+    Bulma.container [
+        Bulma.column [
+            column.is6
+            column.isOffset3
+            prop.children [
+                Bulma.title [ text.hasTextCentered; prop.text "todo-app" ]
+                Bulma.box [
+                    Html.p [
+                        text.hasTextCentered
+                        prop.text "Log in to see your todos."
+                    ]
+                    Bulma.button.a [
+                        color.isPrimary
+                        prop.style [ style.marginTop 20 ]
+                        prop.onClick (fun _ -> dispatch OnLoginRequested)
+                        prop.text "Login"
+                    ]
+                ]
+            ]
+        ]
+    ]
 
-    | Todo pageModel -> Todo.view pageModel (dispatch << TodoMsg)
-    | NotFound -> Html.h1 "Not found"
+let viewPage model dispatch =
+    match model.User, model.CurrentPage with
+    | Guest, (TodoList _ | Todo _) -> pleaseLogIn dispatch
+    | _, TodoList pageModel -> TodoList.view pageModel (dispatch << TodoListMsg)
+    | _, Todo pageModel -> Todo.view pageModel (dispatch << TodoMsg)
+    | _, NotFound -> Html.h1 "Not found"
 
 let navBrand =
     Bulma.navbarBrand.div [

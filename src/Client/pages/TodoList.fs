@@ -14,6 +14,7 @@ type Model = {
 }
 
 type Msg =
+    | LoadTodos
     | GotTodos of Todo list
     | SetInput of string
     | AddTodo
@@ -22,17 +23,12 @@ type Msg =
     | ToggleShowDeleted
     | ApiError of exn
 
-let todosApi =
-    Remoting.createApi ()
-    |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<ITodosApi>
-
-let createAuthApi (token: string) =
+let createApi (token: string) =
     let bearer = $"Bearer {token}"
     Remoting.createApi ()
     |> Remoting.withAuthorizationHeader bearer
     |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<IAuthTodosApi>
+    |> Remoting.buildProxy<ITodosApi>
 
 let init =
     let model = {
@@ -41,20 +37,22 @@ let init =
         ShowDeleted = false
     }
 
-    let cmd = Cmd.OfAsync.perform todosApi.getTodos () GotTodos
-
-    model, cmd
+    model, Cmd.none
 
 let update token msg model =
-    let authTodosApi = createAuthApi token
+    let api = createApi token
 
     match msg with
+    | LoadTodos ->
+        let cmd = Cmd.OfAsync.either api.getTodos () GotTodos ApiError
+
+        model, cmd
     | GotTodos todos -> { model with Todos = todos }, Cmd.none
     | SetInput value -> { model with Input = value }, Cmd.none
     | AddTodo ->
         let todo = Todo.create model.Input
 
-        let cmd = Cmd.OfAsync.either authTodosApi.addTodo todo AddedTodo ApiError
+        let cmd = Cmd.OfAsync.either api.addTodo todo AddedTodo ApiError
 
         { model with Input = "" }, cmd
     | AddedTodo todo ->

@@ -6,6 +6,7 @@ open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
 open JasperFx
 open JasperFx.Events.Projections
+open JasperFx.MultiTenancy
 open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
@@ -20,16 +21,44 @@ open Giraffe
 open Projections
 
 exception ForbiddenException
+exception NotFoundException
 
 let requireRole (context: HttpContext) (role: string) =
     if not (context.User.IsInRole role) then
         raise ForbiddenException
 
-let authTodosApi (context: HttpContext) =
+let currentUserId (context: HttpContext) =
+    context.User.FindFirst(ClaimTypes.NameIdentifier).Value
+
+let todosApi (context: HttpContext) =
     let store = context.GetService<IDocumentStore>()
     let eventStore = EventStorage(store)
+    let tenantId = currentUserId context
 
     {
+        getTodos =
+            fun () -> async {
+                let! todos = eventStore.GetTodos(tenantId)
+                return List.ofSeq todos
+            }
+        getTodo =
+            fun id -> async {
+                let! todo = eventStore.GetTodo(tenantId, id)
+
+                if isNull (box todo) then
+                    return Error NotFound
+                else
+                    return Ok todo
+            }
+        getHistory =
+            fun id -> async {
+                let! history = eventStore.GetHistory(tenantId, id)
+
+                if isNull (box history) then
+                    return []
+                else
+                    return history.Items
+            }
         addTodo =
             fun todo -> async {
                 requireRole context "todo-edit"
@@ -39,46 +68,34 @@ let authTodosApi (context: HttpContext) =
                     Description = todo.Description
                 }
 
-                do! eventStore.AddTodo event
+                do! eventStore.AddTodo(tenantId, event)
                 return todo
             }
         removeTodo =
             fun id -> async {
                 requireRole context "todo-remove"
-                do! eventStore.RemoveTodo id
+
+                let! existing = eventStore.GetTodo(tenantId, id)
+
+                if isNull (box existing) then
+                    raise NotFoundException
+
+                do! eventStore.RemoveTodo(tenantId, id)
             }
         completeTodo =
             fun id -> async {
                 requireRole context "todo-edit"
 
-                do! eventStore.CompleteTodo id
+                let! existing = eventStore.GetTodo(tenantId, id)
 
-                let! todo = eventStore.GetTodo id
+                if isNull (box existing) then
+                    return Error NotFound
+                else
+                    do! eventStore.CompleteTodo(tenantId, id)
 
-                return Ok todo
-            }
-    }
+                    let! todo = eventStore.GetTodo(tenantId, id)
 
-let todosApi (context: HttpContext) =
-    let store = context.GetService<IDocumentStore>()
-    let eventStore = EventStorage(store)
-
-    {
-        getTodos =
-            fun () -> async {
-                let! todos = eventStore.GetTodos()
-                return List.ofSeq todos
-            }
-        getTodo =
-            fun id -> async {
-                let! todo = eventStore.GetTodo id
-
-                return Ok todo
-            }
-        getHistory =
-            fun id -> async {
-                let! history = eventStore.GetHistory id
-                return history.Items
+                    return Ok todo
             }
     }
 
@@ -91,16 +108,12 @@ let errorHandler (ex: exn) (routeInfo: RouteInfo<HttpContext>) =
     | ForbiddenException ->
         routeInfo.httpContext.Response.StatusCode <- 403
         Ignore
+    | NotFoundException ->
+        routeInfo.httpContext.Response.StatusCode <- 404
+        Ignore
     | _ ->
         eprintfn "DEBUG ERROR HANDLER: %s" (ex.ToString())
         Propagate ex.Message
-
-let authTodosRouter =
-    Remoting.createApi ()
-    |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.withErrorHandler errorHandler
-    |> Remoting.fromContext authTodosApi
-    |> Remoting.buildHttpHandler
 
 let todosRouter =
     Remoting.createApi ()
@@ -112,11 +125,10 @@ let todosRouter =
 let authRouter = router {
     pipe_through onlyLoggedIn
 
-    forward "" authTodosRouter
+    forward "" todosRouter
 }
 
 let webApp = choose [
-    todosRouter
     authRouter
 ]
 
@@ -129,8 +141,12 @@ let marten (services: IServiceCollection) =
 
         options.AutoCreateSchemaObjects <- AutoCreate.CreateOrUpdate
 
+        options.Events.TenancyStyle <- TenancyStyle.Conjoined
+
         options.Projections.Add(TodoProjection(), ProjectionLifecycle.Inline)
         options.Projections.Add(TodoHistoryProjection(), ProjectionLifecycle.Live)
+
+        options.Schema.For<Todo>().MultiTenanted() |> ignore
 
         options.UseSystemTextJsonForSerialization(configure = fun v -> v.Converters.Add(JsonFSharpConverter())))
     |> ignore

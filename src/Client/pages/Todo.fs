@@ -21,12 +21,14 @@ type ConfirmationOpen =
     | Closed
 
 type Model = {
+    Id: Guid
     Todo: WebData<Todo, AppError>
     IsConfirmationOpen: ConfirmationOpen
     History: TodoHistoryItem list
 }
 
 type Msg =
+    | LoadTodo
     | GotTodo of Result<Todo, AppError>
     | GotHistory of TodoHistoryItem list
     | RemoveTodo of Guid
@@ -37,35 +39,30 @@ type Msg =
     | CancelRemoveRequest
     | ApiError of exn
 
-let todosApi =
-    Remoting.createApi ()
-    |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<ITodosApi>
-
-let createAuthApi (token: string) =
+let createApi (token: string) =
     let bearer = $"Bearer {token}"
     Remoting.createApi ()
     |> Remoting.withAuthorizationHeader bearer
     |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.buildProxy<IAuthTodosApi>
-
-let getHistory id =
-    Cmd.OfAsync.perform todosApi.getHistory id GotHistory
+    |> Remoting.buildProxy<ITodosApi>
 
 let init id =
-    let cmd = Cmd.OfAsync.perform todosApi.getTodo id GotTodo
-
     {
+        Id = id
         Todo = Loading
         IsConfirmationOpen = Closed
         History = []
     },
-    cmd
+    Cmd.none
 
 let update token msg model =
-    let authTodosApi = createAuthApi token
+    let api = createApi token
 
     match msg with
+    | LoadTodo ->
+        let cmd = Cmd.OfAsync.either api.getTodo model.Id GotTodo ApiError
+
+        model, cmd
     | GotTodo result ->
         let newModel =
             match result with
@@ -74,14 +71,14 @@ let update token msg model =
 
         let cmd =
             match result with
-            | Ok todo -> getHistory todo.Id
+            | Ok todo -> Cmd.OfAsync.either api.getHistory todo.Id GotHistory ApiError
             | Error _ -> Cmd.none
 
         { model with Todo = newModel }, cmd
     | GotHistory history -> { model with History = history }, Cmd.none
 
     | RemoveTodo id ->
-        let cmd = Cmd.OfAsync.either authTodosApi.removeTodo id RemovedTodo ApiError
+        let cmd = Cmd.OfAsync.either api.removeTodo id RemovedTodo ApiError
 
         model, cmd
 
@@ -91,16 +88,22 @@ let update token msg model =
         model, cmd
 
     | CompleteTodo id ->
-        let cmd = Cmd.OfAsync.either authTodosApi.completeTodo id CompletedTodo ApiError
+        let cmd = Cmd.OfAsync.either api.completeTodo id CompletedTodo ApiError
 
         model, cmd
 
     | CompletedTodo result ->
         match result with
-        | Ok todo -> { model with Todo = Loaded todo }, getHistory todo.Id
+        | Ok todo ->
+            let cmd = Cmd.OfAsync.either api.getHistory todo.Id GotHistory ApiError
+
+            { model with Todo = Loaded todo }, cmd
         | Error error ->
             match error with
-            | NotFound -> model, Cmd.navigate "/"
+            | NotFound ->
+                let cmd = Cmd.navigate "/"
+
+                model, cmd
             | _ -> { model with Todo = Errored error }, Cmd.none
 
     | RequestRemove id ->
@@ -119,7 +122,9 @@ let update token msg model =
 
         model, Cmd.none
     | ApiError _ ->
-        model, Cmd.ofMsg CancelRemoveRequest
+        let cmd = Cmd.ofMsg CancelRemoveRequest
+
+        model, cmd
 
 let confirmationModal model dispatch =
     let id =
